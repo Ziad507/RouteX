@@ -271,6 +271,7 @@ CSRF_TRUSTED_ORIGINS = [
 # Read CORS origins from environment variable for flexibility
 # Format in .env: CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 CORS_ALLOWED_ORIGINS_ENV = env.list("CORS_ALLOWED_ORIGINS", default=[])
+ALLOW_LOCALHOST_CORS = env.bool("CORS_ALLOW_LOCALHOST", default=False)
 
 if CORS_ALLOWED_ORIGINS_ENV:
     # Production: use explicit whitelist from .env
@@ -287,6 +288,14 @@ else:
     # Production fallback: no CORS unless explicitly configured
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = []
+
+# Optionally allow any localhost (any port) in production via env flag
+if ALLOW_LOCALHOST_CORS:
+    # Regexes evaluated in addition to explicit origins
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
 
 # CORS security settings
 CORS_ALLOW_CREDENTIALS = True
