@@ -155,6 +155,13 @@ class CustomerAddressesView(generics.RetrieveAPIView):
     queryset = Customer.objects.all()
     permission_classes = [IsWarehouseManager]
 
+    # Minimal serializer so DRF/drf-spectacular can introspect the response
+    class CustomerAddressesResponseSerializer(serializers.Serializer):
+        customer_id = serializers.IntegerField()
+        addresses = serializers.ListField(child=serializers.CharField())
+
+    serializer_class = CustomerAddressesResponseSerializer
+
     @extend_schema(
         tags=["Customers"],
         responses={

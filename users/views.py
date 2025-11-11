@@ -179,8 +179,6 @@ class LoginView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
 @extend_schema(
     tags=["Auth"],
     responses={
@@ -199,6 +197,8 @@ class LoginView(APIView):
         403: OpenApiResponse(description="User has no assigned role"),
     },
 )
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def whois(request):
     """
     Return authenticated user information and role.
