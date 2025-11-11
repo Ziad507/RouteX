@@ -6,7 +6,8 @@
     "version" : "1.0.0"
   },
   "servers" : [ {
-    "url" : "/"
+    "url" : "",
+    "description" : "Ziad506.pythonanywhere.com"
   } ],
   "paths" : {
     "/api/v1/auth/login/" : {
