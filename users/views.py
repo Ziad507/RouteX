@@ -15,8 +15,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework import serializers
 from shipments.models import WarehouseManager, Driver
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, OpenApiTypes
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,6 +74,39 @@ class LoginView(APIView):
     """
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Auth"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "phone": {"type": "string", "example": "+966512345678"},
+                    "password": {"type": "string", "example": "StrongPass123"},
+                },
+                "required": ["phone", "password"],
+            }
+        },
+        responses={
+            200: OpenApiResponse(
+                response=OpenApiTypes.OBJECT,
+                description="Successful login",
+                examples=[
+                    OpenApiExample(
+                        "LoginSuccess",
+                        value={
+                            "access": "jwt-access-token",
+                            "refresh": "jwt-refresh-token",
+                            "role": "driver",
+                            "user": {"id": 1, "username": "Ahmed", "phone": "966512345678"},
+                        },
+                    )
+                ],
+            ),
+            400: OpenApiResponse(description="Validation error"),
+            401: OpenApiResponse(description="Invalid credentials"),
+            403: OpenApiResponse(description="Account deactivated or no role"),
+        },
+    )
     def post(self, request):
         """Handle user login with phone and password."""
         phone = request.data.get('phone')
@@ -169,4 +204,105 @@ def whois(request):
         'phone': user.phone,
         'role': role,
     }, status=status.HTTP_200_OK)
+
+
+class SignupSerializer(serializers.Serializer):
+    """
+    Signup serializer validating Saudi phone numbers and passwords.
+    
+    Expected input:
+    - name: string (used as username/display name)
+    - phone: string in E.164-like format starting with +966 (e.g., +9665XXXXXXXX)
+    - password: string, min 8 chars
+    - password_confirm: string, must match password
+    """
+    name = serializers.CharField(max_length=150)
+    phone = serializers.CharField(max_length=20)
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_phone(self, value: str) -> str:
+        import re
+        raw = (value or "").strip()
+        # Must start with +966 and followed by 9 digits (typically mobile 5XXXXXXXX)
+        if not re.fullmatch(r"\+966\d{9}", raw):
+            raise ValidationError("Phone must start with +966 and contain 9 digits after the country code.")
+        # Store normalized numeric-only to be consistent with login normalization
+        normalized = ''.join(ch for ch in raw if ch.isdigit())
+        # Ensure uniqueness
+        if User.objects.filter(phone=normalized).exists():
+            raise ValidationError("Phone is already registered.")
+        return normalized
+
+    def validate(self, attrs):
+        if attrs.get("password") != attrs.get("password_confirm"):
+            raise ValidationError({"password_confirm": "Passwords do not match."})
+        return attrs
+
+
+class SignupView(APIView):
+    """
+    Public signup endpoint.
+    
+    POST /api/v1/auth/signup/
+    Body: {"name": "...", "phone": "+9665XXXXXXXX", "password": "********", "password_confirm": "********"}
+    Behavior:
+    - Creates a new user with normalized phone
+    - Assigns default role: Driver
+    - Returns JWT tokens and user info
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=["Auth"],
+        request=SignupSerializer,
+        responses={
+            201: OpenApiResponse(
+                description="User created as Driver; tokens returned",
+                response=OpenApiTypes.OBJECT,
+                examples=[
+                    OpenApiExample(
+                        "SignupSuccess",
+                        value={
+                            "access": "jwt-access-token",
+                            "refresh": "jwt-refresh-token",
+                            "role": "driver",
+                            "user": {"id": 10, "username": "New Driver", "phone": "9665XXXXXXX"},
+                        },
+                    )
+                ],
+            ),
+            400: OpenApiResponse(description="Validation error"),
+        },
+    )
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        name = serializer.validated_data["name"].strip()
+        phone_norm = serializer.validated_data["phone"]  # already normalized digits
+        password = serializer.validated_data["password"]
+
+        # Create user
+        user = User(username=name or phone_norm, phone=phone_norm, is_active=True)
+        user.set_password(password)
+        user.save()
+
+        # Assign default role: Driver
+        Driver.objects.create(user=user, is_active=True)
+
+        # Issue tokens
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        return Response({
+            "access": str(access),
+            "refresh": str(refresh),
+            "role": "driver",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "phone": user.phone,
+            }
+        }, status=status.HTTP_201_CREATED)
 
