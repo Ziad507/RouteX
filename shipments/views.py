@@ -1,4 +1,4 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, serializers
 from django.db.models import Count, ProtectedError, OuterRef, Subquery, Case, When, Value, BooleanField, F, Q
 from rest_framework.response import Response
 from rest_framework import viewsets
@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework import serializers as drf_serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from .permissions import IsWarehouseManager, IsDriver
 from .models import Shipment, StatusUpdate, WarehouseManager, Customer, Warehouse, Driver, Product
 from .serializers import (
@@ -154,6 +155,22 @@ class CustomerAddressesView(generics.RetrieveAPIView):
     queryset = Customer.objects.all()
     permission_classes = [IsWarehouseManager]
 
+    @extend_schema(
+        tags=["Customers"],
+        responses={
+            200: OpenApiResponse(
+                description="Customer addresses list",
+                response=inline_serializer(
+                    name="CustomerAddressesResponse",
+                    fields={
+                        "customer_id": serializers.IntegerField(),
+                        "addresses": serializers.ListSerializer(child=serializers.CharField()),
+                    },
+                ),
+            ),
+            404: OpenApiResponse(description="Customer not found"),
+        },
+    )
     def retrieve(self, request, *args, **kwargs):
         customer = self.get_object()
         addresses = [a for a in (customer.address, customer.address2, customer.address3) if a]

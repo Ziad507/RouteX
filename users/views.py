@@ -19,7 +19,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework import serializers
 from shipments.models import WarehouseManager, Driver
 from django.db import transaction, IntegrityError
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, OpenApiTypes, inline_serializer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -181,6 +181,24 @@ class LoginView(APIView):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@extend_schema(
+    tags=["Auth"],
+    responses={
+        200: OpenApiResponse(
+            description="Authenticated user info and role",
+            response=inline_serializer(
+                name="WhoAmIResponse",
+                fields={
+                    "id": serializers.IntegerField(),
+                    "username": serializers.CharField(),
+                    "phone": serializers.CharField(),
+                    "role": serializers.CharField(),
+                },
+            ),
+        ),
+        403: OpenApiResponse(description="User has no assigned role"),
+    },
+)
 def whois(request):
     """
     Return authenticated user information and role.

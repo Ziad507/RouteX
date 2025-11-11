@@ -375,7 +375,7 @@ class DriverStatusSerializer(serializers.ModelSerializer):
             "current_active_shipment_id",
         ]
 
-    def get_status(self, obj):
+    def get_status(self, obj) -> str:
         # busy if has active shipment
         if getattr(obj, "current_active_shipment_id", None):
             return "Busy"
