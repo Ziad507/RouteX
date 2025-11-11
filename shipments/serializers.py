@@ -1,0 +1,385 @@
+from rest_framework import serializers
+from django.utils import timezone
+from users.models import CustomUser
+from django.db import transaction
+from django.db.models import F
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from .models import (
+    WarehouseManager, Warehouse, Customer, Shipment,
+    StatusUpdate, Driver, Product
+)
+
+
+# PRODUCTS
+class ProductSerializer(serializers.ModelSerializer):
+    """
+    Product serializer with image upload support and validation.
+    
+    Handles:
+    - Image upload with format and size validation
+    - Stock quantity management
+    - Shipment count tracking
+    """
+    shipments_count = serializers.IntegerField(read_only=True)
+    image = serializers.ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "name", "price", "unit", "stock_qty", "is_active",
+            "image", "created_at", "shipments_count"
+        ]
+        read_only_fields = ["created_at", "shipments_count"]
+
+    def validate_image(self, value):
+        """
+        Validate uploaded product image.
+        
+        Checks:
+        - File size (max 5MB)
+        - File format (jpg, jpeg, png, webp)
+        """
+        if value:
+            # Check file size
+            from django.conf import settings
+            max_size = getattr(settings, 'MAX_IMAGE_SIZE', 5 * 1024 * 1024)  # 5MB default
+            
+            if value.size > max_size:
+                raise ValidationError(
+                    f"Image file too large. Maximum size is {max_size / (1024 * 1024):.1f}MB."
+                )
+            
+            # Check file extension
+            import os
+            ext = os.path.splitext(value.name)[1].lower()
+            allowed_extensions = getattr(
+                settings, 
+                'ALLOWED_IMAGE_EXTENSIONS', 
+                ['.jpg', '.jpeg', '.png', '.webp']
+            )
+            
+            if ext not in allowed_extensions:
+                raise ValidationError(
+                    f"Invalid image format. Allowed formats: {', '.join(allowed_extensions)}"
+                )
+        
+        return value
+
+    def validate_price(self, value):
+        """Ensure price is positive."""
+        if value <= 0:
+            raise ValidationError("Price must be greater than zero.")
+        return value
+
+    def validate_stock_qty(self, value):
+        """Ensure stock quantity is non-negative."""
+        if value < 0:
+            raise ValidationError("Stock quantity cannot be negative.")
+        return value
+
+
+
+# SHIPMENTS
+class ShipmentSerializer(serializers.ModelSerializer):
+    # driver can be empty (shipment not yet assigned)
+    driver = serializers.PrimaryKeyRelatedField(
+        queryset=Driver.objects.all(), required=False, allow_null=True
+    )
+    driver_username = serializers.CharField(source="driver.user.username", read_only=True)
+    customer_name   = serializers.CharField(source="customer.name", read_only=True)
+    customer_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all()
+    )
+    product_name = serializers.CharField(source="product.name", read_only=True)
+
+    class Meta:
+        model = Shipment
+        fields = [
+            "id",
+            "warehouse",
+            "product", "product_name",
+            "driver", "driver_username",
+            "customer", "customer_name",
+            "customer_address",
+            "notes",
+            "current_status",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = [
+            "created_at", "updated_at", "current_status",
+            "driver_username", "customer_name", "product_name",
+        ]
+
+    def _customer_addresses_list(self, customer: Customer):
+
+        return [v for v in [
+            getattr(customer, "address", None),
+            getattr(customer, "address2", None),
+            getattr(customer, "address3", None),
+        ] if v]
+
+
+    def _reserve_stock(self, product: Product, qty: int = 1):
+
+        updated = Product.objects.filter(
+            pk=product.pk, stock_qty__gte=qty
+        ).update(stock_qty=F("stock_qty") - qty)
+        if updated == 0:
+            raise ValidationError({"product": "Insufficient stock quantity."})
+
+    def _release_stock(self, product: Product, qty: int = 1):
+        # increase stock again (used when product changes)
+        Product.objects.filter(pk=product.pk).update(stock_qty=F("stock_qty") + qty)
+
+    # validation 
+    def validate(self, attrs):
+        request = self.context["request"]
+        if not WarehouseManager.objects.filter(user=request.user).exists():
+            raise PermissionDenied("Only warehouse managers can create/update shipments.")
+
+        # customer and address
+        customer = attrs.get("customer", getattr(self.instance, "customer", None))
+        if not customer:
+            attrs["customer_address"] = None
+        else:
+            allowed = self._customer_addresses_list(customer)
+            if not allowed:
+                raise ValidationError({"customer_address": "The customer has no saved addresses to use."})
+
+            addr = attrs.get("customer_address", getattr(self.instance, "customer_address", None))
+            addr_clean = None if addr is None else str(addr).strip()
+
+            if not addr_clean:
+                # Customer chosen but no address provided
+                raise ValidationError({
+                    "customer_address": "A customer has been selected. You must choose one of the customer's saved addresses.",
+                    "allowed_addresses": allowed,
+                })
+
+            if addr_clean not in allowed:
+                # Address must be one of the customer's addresses
+                raise ValidationError({
+                    "customer_address": "The address must be one of the customer's saved addresses.",
+                    "allowed_addresses": allowed,
+                })
+
+            attrs["customer_address"] = addr_clean
+
+        new_driver  = attrs.get("driver",  getattr(self.instance, "driver",  None))
+        new_product = attrs.get("product", getattr(self.instance, "product", None))
+
+        # check stock when assigning driver with product
+        need_new_reservation = False
+        if new_driver and new_product:
+            if self.instance is None:
+                need_new_reservation = True
+            else:
+                old_driver  = self.instance.driver
+                old_product = self.instance.product
+                if not old_driver:
+                    # Previously no driver, now driver assigned
+                    need_new_reservation = True
+                elif old_product != new_product:
+                    # Product changed while driver remains assigned
+                    need_new_reservation = True
+
+        if need_new_reservation and new_product and new_product.stock_qty <= 0:
+            # Fast-fail before hitting DB update
+            raise ValidationError({"product": "Insufficient available stock quantity."})
+
+        return attrs
+
+    # create/update
+    @transaction.atomic
+    def create(self, validated_data):
+        # Create shipment, then reserve stock if both driver and product are assigned
+        driver  = validated_data.get("driver")
+        product = validated_data.get("product")
+
+        obj = super().create(validated_data)
+
+        if driver and product:
+            self._reserve_stock(product, 1)
+
+        return obj
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        # Update shipment and adjust stock when assignment (driver, product) changes.
+        old_driver  = instance.driver
+        old_product = instance.product
+
+        new_driver  = validated_data.get("driver",  old_driver)
+        new_product = validated_data.get("product", old_product)
+
+        obj = super().update(instance, validated_data)
+
+        # Cases:
+        if not old_driver and new_driver:
+            # Driver assigned now
+            if new_product:
+                self._reserve_stock(new_product, 1)
+
+        elif old_driver and not new_driver:
+            # Driver removed
+            if old_product:
+                self._release_stock(old_product, 1)
+
+        elif old_driver and new_driver and old_product != new_product:
+            # Same driver but product replaced
+            if old_product:
+                self._release_stock(old_product, 1)
+            if new_product:
+                self._reserve_stock(new_product, 1)
+
+        return obj
+
+
+
+# WAREHOUSE
+class WarehouseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Warehouse
+        fields = ["id", "name", "location", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        request = self.context["request"]
+        if not WarehouseManager.objects.filter(user=request.user).exists():
+            raise PermissionDenied("Only warehouse managers can create/update warehouses.")
+
+        # Normalize inputs 
+        name     = (attrs.get("name",     getattr(self.instance, "name",     "")) or "").strip()
+        location = (attrs.get("location", getattr(self.instance, "location", "")) or "").strip()
+
+        if not name:
+            raise ValidationError({"name": "Warehouse name is required."})
+        if not location:
+            raise ValidationError({"location": "Location/address is required."})
+
+        attrs["name"] = name
+        attrs["location"] = location
+
+        # prevent duplicate name + location
+        qs = Warehouse.objects.filter(name__iexact=name, location__iexact=location)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise ValidationError({
+                "non_field_errors": ["A warehouse with the same name and address already exists."]
+            })
+
+        return attrs
+
+
+
+# CUSTOMERS
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Customer
+        fields = ["id", "name", "phone", "address", "address2", "address3", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        request = self.context["request"]
+        if not WarehouseManager.objects.filter(user=request.user).exists():
+            raise PermissionDenied("Only warehouse managers can create/update customers.")
+
+        addr  = (attrs.get("address")  or "").strip()
+        addr2 = (attrs.get("address2") or "").strip()
+        addr3 = (attrs.get("address3") or "").strip()
+
+        if not (addr or addr2 or addr3):
+            raise ValidationError({"addresses": "Provide at least one address."})
+
+        return attrs
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        for key in ["address", "address2", "address3"]:
+            if not data.get(key):
+                data.pop(key, None)
+        return data
+
+
+
+# STATUS UPDATE (Driver)
+class StatusUpdateSerializer(serializers.ModelSerializer):
+    # Set by server at creation time
+    timestamp = serializers.DateTimeField(read_only=True)
+    customer_name  = serializers.CharField(source="shipment.customer.name",  read_only=True)
+    customer_phone = serializers.CharField(source="shipment.customer.phone", read_only=True)
+
+    class Meta:
+        model  = StatusUpdate
+        fields = [
+            "id",
+            "shipment",
+            "customer_name", "customer_phone",
+            "status",
+            "timestamp",
+            "note", "photo",
+            "latitude", "longitude",
+            "location_accuracy_m",
+        ]
+
+    def validate(self, attrs):
+        request = self.context["request"]
+
+        # must be a driver with profile
+        try:
+            driver_profile = Driver.objects.get(user=request.user)
+        except Driver.DoesNotExist:
+            raise PermissionDenied("Only drivers can create status updates.")
+
+        shipment: Shipment = attrs["shipment"]
+        if not shipment.driver or shipment.driver_id != driver_profile.id:
+            raise PermissionDenied("You can only update the status of your own shipment.")
+
+        # GPS accuracy ≤ 30 meters validation
+        acc = attrs.get("location_accuracy_m")
+        if acc is not None and acc > 30:
+            raise serializers.ValidationError({"location_accuracy_m": "GPS accuracy must be ≤ 30 meters."})
+
+        # both latitude and longitude must be provided together
+        lat, lng = attrs.get("latitude"), attrs.get("longitude")
+        if (lat is None) ^ (lng is None):
+            raise serializers.ValidationError("Both latitude and longitude must be provided together.")
+        return attrs
+
+    def create(self, validated_data):
+        """Set server timestamp and create the status update."""
+        validated_data["timestamp"] = timezone.now()
+        return super().create(validated_data)
+
+
+
+# DRIVER STATUS (for manager dashboard)
+class DriverStatusSerializer(serializers.ModelSerializer):
+    name  = serializers.CharField(source="user.username", read_only=True)
+    phone = serializers.CharField(source="user.phone",    read_only=True)
+    status = serializers.SerializerMethodField()
+    last_seen_at = serializers.DateTimeField(read_only=True)
+    current_active_shipment_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model  = Driver
+        fields = [
+            "id",
+            "name", "phone",
+            "status",
+            "last_seen_at",
+            "current_active_shipment_id",
+        ]
+
+    def get_status(self, obj):
+        # busy if has active shipment
+        if getattr(obj, "current_active_shipment_id", None):
+            return "Busy"
+        # available if effectively active
+        if getattr(obj, "effective_is_active", False):
+            return "Available"
+        return "Unavailable"

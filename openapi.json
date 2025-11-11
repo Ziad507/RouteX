@@ -1,0 +1,1417 @@
+openapi: 3.0.3
+info:
+  title: RouteX Logistics API
+  version: 1.0.0
+  description: Professional REST API for logistics and shipment management system.
+    Supports role-based access control for Warehouse Managers and Drivers.
+paths:
+  /api/v1/auth/login/:
+    post:
+      operationId: api_v1_auth_login_create
+      description: Handle user login with phone and password.
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: api_v1_auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/whoami/:
+    get:
+      operationId: api_v1_auth_whoami_retrieve
+      description: |-
+        Return authenticated user information and role.
+
+        GET /api/whois
+        Headers: Authorization: Bearer <access_token>
+        Returns: {"id": 1, "username": "...", "phone": "...", "role": "manager|driver"}
+      tags:
+      - api
+      responses:
+        '200':
+          description: No response body
+  /api/v1/autocomplete/customers/:
+    get:
+      operationId: api_v1_autocomplete_customers_list
+      description: |-
+        Query parameter: q
+        - q isdigit => match ID/phone
+        - q text => match name/phone
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCustomerList'
+          description: ''
+  /api/v1/autocomplete/shipments/:
+    get:
+      operationId: api_v1_autocomplete_shipments_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShipmentList'
+          description: ''
+  /api/v1/customers/:
+    get:
+      operationId: api_v1_customers_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCustomerList'
+          description: ''
+    post:
+      operationId: api_v1_customers_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/customers/{id}/:
+    get:
+      operationId: api_v1_customers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    put:
+      operationId: api_v1_customers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    patch:
+      operationId: api_v1_customers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    delete:
+      operationId: api_v1_customers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '204':
+          description: No response body
+  /api/v1/customers/{id}/addresses/:
+    get:
+      operationId: api_v1_customers_addresses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          description: No response body
+  /api/v1/driver/shipments/:
+    get:
+      operationId: api_v1_driver_shipments_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShipmentList'
+          description: ''
+  /api/v1/drivers/:
+    get:
+      operationId: api_v1_drivers_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDriverStatusList'
+          description: ''
+  /api/v1/manager/shipments/:
+    get:
+      operationId: api_v1_manager_shipments_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShipmentList'
+          description: ''
+  /api/v1/products/:
+    get:
+      operationId: api_v1_products_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: api_v1_products_create
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/v1/products/{id}/:
+    get:
+      operationId: api_v1_products_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: api_v1_products_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: api_v1_products_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: api_v1_products_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '204':
+          description: No response body
+  /api/v1/shipments/:
+    post:
+      operationId: api_v1_shipments_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+          description: ''
+  /api/v1/shipments/{id}/:
+    get:
+      operationId: api_v1_shipments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+          description: ''
+    put:
+      operationId: api_v1_shipments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShipmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShipmentRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+          description: ''
+    patch:
+      operationId: api_v1_shipments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShipmentRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+          description: ''
+    delete:
+      operationId: api_v1_shipments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '204':
+          description: No response body
+  /api/v1/status-updates/:
+    post:
+      operationId: api_v1_status_updates_create
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StatusUpdateRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusUpdate'
+          description: ''
+  /api/v1/warehouses/:
+    get:
+      operationId: api_v1_warehouses_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWarehouseList'
+          description: ''
+    post:
+      operationId: api_v1_warehouses_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+          description: ''
+  /api/v1/warehouses/{id}/:
+    get:
+      operationId: api_v1_warehouses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+          description: ''
+    put:
+      operationId: api_v1_warehouses_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WarehouseRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+          description: ''
+    patch:
+      operationId: api_v1_warehouses_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWarehouseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWarehouseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWarehouseRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+          description: ''
+    delete:
+      operationId: api_v1_warehouses_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+        address:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+      - phone
+    CustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+        address:
+          type: string
+          maxLength: 255
+        address2:
+          type: string
+          maxLength: 255
+        address3:
+          type: string
+          maxLength: 255
+      required:
+      - name
+      - phone
+    DriverStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        current_active_shipment_id:
+          type: integer
+          readOnly: true
+      required:
+      - current_active_shipment_id
+      - id
+      - last_seen_at
+      - name
+      - phone
+      - status
+    PaginatedCustomerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+    PaginatedDriverStatusList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DriverStatus'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PaginatedShipmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shipment'
+    PaginatedWarehouseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warehouse'
+    PatchedCustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+        address:
+          type: string
+          maxLength: 255
+        address2:
+          type: string
+          maxLength: 255
+        address3:
+          type: string
+          maxLength: 255
+    PatchedProductRequest:
+      type: object
+      description: |-
+        Product serializer with image upload support and validation.
+
+        Handles:
+        - Image upload with format and size validation
+        - Stock quantity management
+        - Shipment count tracking
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        unit:
+          type: string
+          maxLength: 50
+        stock_qty:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        image:
+          type: string
+          format: binary
+          nullable: true
+    PatchedShipmentRequest:
+      type: object
+      properties:
+        warehouse:
+          type: integer
+        product:
+          type: integer
+        driver:
+          type: integer
+          nullable: true
+        customer:
+          type: integer
+          nullable: true
+        customer_address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    PatchedWarehouseRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+    Product:
+      type: object
+      description: |-
+        Product serializer with image upload support and validation.
+
+        Handles:
+        - Image upload with format and size validation
+        - Stock quantity management
+        - Shipment count tracking
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        unit:
+          type: string
+          maxLength: 50
+        stock_qty:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        image:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        shipments_count:
+          type: integer
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - price
+      - shipments_count
+    ProductRequest:
+      type: object
+      description: |-
+        Product serializer with image upload support and validation.
+
+        Handles:
+        - Image upload with format and size validation
+        - Stock quantity management
+        - Shipment count tracking
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        unit:
+          type: string
+          maxLength: 50
+        stock_qty:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        image:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - name
+      - price
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        warehouse:
+          type: integer
+        product:
+          type: integer
+        product_name:
+          type: string
+          readOnly: true
+        driver:
+          type: integer
+          nullable: true
+        driver_username:
+          type: string
+          readOnly: true
+        customer:
+          type: integer
+          nullable: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        current_status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - current_status
+      - customer_name
+      - driver_username
+      - id
+      - product
+      - product_name
+      - updated_at
+      - warehouse
+    ShipmentRequest:
+      type: object
+      properties:
+        warehouse:
+          type: integer
+        product:
+          type: integer
+        driver:
+          type: integer
+          nullable: true
+        customer:
+          type: integer
+          nullable: true
+        customer_address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+      - product
+      - warehouse
+    StatusEnum:
+      enum:
+      - NEW
+      - ASSIGNED
+      - IN_TRANSIT
+      - DELIVERED
+      type: string
+      description: |-
+        * `NEW` - New
+        * `ASSIGNED` - Assigned
+        * `IN_TRANSIT` - In transit
+        * `DELIVERED` - Delivered
+    StatusUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        shipment:
+          type: integer
+        customer_name:
+          type: string
+          readOnly: true
+        customer_phone:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+        note:
+          type: string
+        photo:
+          type: string
+          format: uri
+          nullable: true
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        location_accuracy_m:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: GPS accuracy in meters.
+      required:
+      - customer_name
+      - customer_phone
+      - id
+      - shipment
+      - status
+      - timestamp
+    StatusUpdateRequest:
+      type: object
+      properties:
+        shipment:
+          type: integer
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        note:
+          type: string
+        photo:
+          type: string
+          format: binary
+          nullable: true
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        location_accuracy_m:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: GPS accuracy in meters.
+      required:
+      - shipment
+      - status
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        location:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - location
+      - name
+      - updated_at
+    WarehouseRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - location
+      - name
