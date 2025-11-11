@@ -18,6 +18,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework import serializers
 from shipments.models import WarehouseManager, Driver
+from django.db import transaction, IntegrityError
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, OpenApiTypes
 import logging
 
@@ -280,16 +281,30 @@ class SignupView(APIView):
         serializer.is_valid(raise_exception=True)
 
         name = serializer.validated_data["name"].strip()
-        phone_norm = serializer.validated_data["phone"]  # already normalized digits
+        phone_norm = serializer.validated_data["phone"]  # digits only
         password = serializer.validated_data["password"]
 
-        # Create user
-        user = User(username=name or phone_norm, phone=phone_norm, is_active=True)
-        user.set_password(password)
-        user.save()
+        # Generate a unique username fallback
+        username_candidate = name or f"user_{phone_norm[-4:]}"
+        if User.objects.filter(username=username_candidate).exists():
+            username_candidate = f"{username_candidate}_{phone_norm[-4:]}"
 
-        # Assign default role: Driver
-        Driver.objects.create(user=user, is_active=True)
+        try:
+            with transaction.atomic():
+                user = User(username=username_candidate, phone=phone_norm, is_active=True)
+                user.set_password(password)
+                user.save()
+
+                Driver.objects.create(user=user, is_active=True)
+        except IntegrityError as exc:
+            logger.exception("Signup failed due to integrity error", exc_info=exc)
+            raise ValidationError({"detail": "User could not be created. Please try a different name or phone."})
+        except Exception as exc:
+            logger.exception("Unexpected error during signup", exc_info=exc)
+            return Response(
+                {"detail": "Unexpected error occurred during signup. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         # Issue tokens
         refresh = RefreshToken.for_user(user)
