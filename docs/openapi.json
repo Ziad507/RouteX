@@ -1,1966 +1,2233 @@
 {
-  "openapi" : "3.0.3",
-  "info" : {
-    "title" : "RouteX Logistics API",
-    "description" : "Professional REST API for logistics and shipment management system. Supports role-based access control for Warehouse Managers and Drivers.",
-    "version" : "1.0.0"
-  },
-  "servers" : [ {
-    "url" : "",
-    "description" : "Ziad506.pythonanywhere.com"
-  } ],
-  "paths" : {
-    "/api/v1/auth/login/" : {
-      "post" : {
-        "tags" : [ "api" ],
-        "description" : "Handle user login with phone and password.",
-        "operationId" : "api_v1_auth_login_create",
-        "responses" : {
-          "200" : {
-            "description" : "No response body"
-          }
+    "openapi": "3.0.3",
+    "info": {
+        "title": "RouteX Logistics API",
+        "version": "1.0.0",
+        "description": "Professional REST API for logistics and shipment management system. Supports role-based access control for Warehouse Managers and Drivers."
+    },
+    "paths": {
+        "/api/v1/auth/login/": {
+            "post": {
+                "operationId": "api_v1_auth_login_create",
+                "description": "Handle user login with phone and password.",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+966512345678"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "StrongPass123"
+                                    }
+                                },
+                                "required": [
+                                    "phone",
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                },
+                                "examples": {
+                                    "LoginSuccess": {
+                                        "value": {
+                                            "access": "jwt-access-token",
+                                            "refresh": "jwt-refresh-token",
+                                            "role": "driver",
+                                            "user": {
+                                                "id": 1,
+                                                "username": "Ahmed",
+                                                "phone": "966512345678"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Successful login"
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    },
+                    "403": {
+                        "description": "Account deactivated or no role"
+                    }
+                }
+            }
         },
-        "security" : [ { } ]
-      }
-    },
-    "/api/v1/auth/refresh/" : {
-      "post" : {
-        "tags" : [ "api" ],
-        "description" : "Takes a refresh type JSON web token and returns an access type JSON web\ntoken if the refresh token is valid.",
-        "operationId" : "api_v1_auth_refresh_create",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/TokenRefreshRequest"
-              }
-            },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/TokenRefreshRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/TokenRefreshRequest"
-              }
+        "/api/v1/auth/refresh/": {
+            "post": {
+                "operationId": "api_v1_auth_refresh_create",
+                "description": "Takes a refresh type JSON web token and returns an access type JSON web\ntoken if the refresh token is valid.",
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TokenRefreshRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TokenRefreshRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TokenRefreshRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenRefresh"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
             }
-          },
-          "required" : true
         },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TokenRefresh"
+        "/api/v1/auth/signup/": {
+            "post": {
+                "operationId": "api_v1_auth_signup_create",
+                "description": "Public signup endpoint.\n\nPOST /api/v1/auth/signup/\nBody: {\"name\": \"...\", \"phone\": \"+9665XXXXXXXX\", \"password\": \"********\", \"password_confirm\": \"********\"}\nBehavior:\n- Creates a new user with normalized phone\n- Assigns default role: Driver\n- Returns JWT tokens and user info",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SignupRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SignupRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SignupRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                },
+                                "examples": {
+                                    "SignupSuccess": {
+                                        "value": {
+                                            "access": "jwt-access-token",
+                                            "refresh": "jwt-refresh-token",
+                                            "role": "driver",
+                                            "user": {
+                                                "id": 10,
+                                                "username": "New Driver",
+                                                "phone": "9665XXXXXXX"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "User created as Driver; tokens returned"
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    }
                 }
-              }
             }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/whoami/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "description" : "Return authenticated user information and role.\n\nGET /api/whois\nHeaders: Authorization: Bearer <access_token>\nReturns: {\"id\": 1, \"username\": \"...\", \"phone\": \"...\", \"role\": \"manager|driver\"}",
-        "operationId" : "api_v1_auth_whoami_retrieve",
-        "responses" : {
-          "200" : {
-            "description" : "No response body"
-          }
-        }
-      }
-    },
-    "/api/v1/autocomplete/customers/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "description" : "Query parameter: q\n- q isdigit => match ID/phone\n- q text => match name/phone",
-        "operationId" : "api_v1_autocomplete_customers_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedCustomerList"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/autocomplete/shipments/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_autocomplete_shipments_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedShipmentList"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/customers/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedCustomerList"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_create",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CustomerRequest"
-              }
-            },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CustomerRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CustomerRequest"
-              }
-            }
-          },
-          "required" : true
         },
-        "responses" : {
-          "201" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Customer"
+        "/api/v1/auth/whoami/": {
+            "get": {
+                "operationId": "api_v1_auth_whoami_retrieve",
+                "description": "Return authenticated user information and role.\n\nGET /api/whois\nHeaders: Authorization: Bearer <access_token>\nReturns: {\"id\": 1, \"username\": \"...\", \"phone\": \"...\", \"role\": \"manager|driver\"}",
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No response body"
+                    }
                 }
-              }
             }
-          }
-        }
-      }
-    },
-    "/api/v1/customers/{id}/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_retrieve",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Customer"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CustomerRequest"
-              }
-            },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CustomerRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CustomerRequest"
-              }
-            }
-          },
-          "required" : true
         },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Customer"
+        "/api/v1/autocomplete/customers/": {
+            "get": {
+                "operationId": "api_v1_autocomplete_customers_list",
+                "description": "Query parameter: q\n- q isdigit => match ID/phone\n- q text => match name/phone",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedCustomerList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
                 }
-              }
             }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_destroy",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "204" : {
-            "description" : "No response body"
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_partial_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedCustomerRequest"
-              }
-            },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedCustomerRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedCustomerRequest"
-              }
-            }
-          }
         },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Customer"
+        "/api/v1/autocomplete/shipments/": {
+            "get": {
+                "operationId": "api_v1_autocomplete_shipments_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedShipmentList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
                 }
-              }
             }
-          }
-        }
-      }
-    },
-    "/api/v1/customers/{id}/addresses/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_customers_addresses_retrieve",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "No response body"
-          }
-        }
-      }
-    },
-    "/api/v1/driver/shipments/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_driver_shipments_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedShipmentList"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/drivers/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_drivers_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedDriverStatusList"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/manager/shipments/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_manager_shipments_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedShipmentList"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/products/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_products_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedProductList"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_products_create",
-        "requestBody" : {
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ProductRequest"
-              }
-            },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ProductRequest"
-              }
-            },
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ProductRequest"
-              }
-            }
-          },
-          "required" : true
         },
-        "responses" : {
-          "201" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Product"
+        "/api/v1/customers/": {
+            "get": {
+                "operationId": "api_v1_customers_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedCustomerList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
                 }
-              }
+            },
+            "post": {
+                "operationId": "api_v1_customers_create",
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Customer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
             }
-          }
+        },
+        "/api/v1/customers/{id}/": {
+            "get": {
+                "operationId": "api_v1_customers_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Customer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_customers_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Customer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_customers_partial_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedCustomerRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedCustomerRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedCustomerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Customer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_customers_destroy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/customers/{id}/addresses/": {
+            "get": {
+                "operationId": "api_v1_customers_addresses_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/driver/shipments/": {
+            "get": {
+                "operationId": "api_v1_driver_shipments_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedShipmentList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/drivers/": {
+            "get": {
+                "operationId": "api_v1_drivers_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDriverStatusList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/manager/shipments/": {
+            "get": {
+                "operationId": "api_v1_manager_shipments_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedShipmentList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/products/": {
+            "get": {
+                "operationId": "api_v1_products_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedProductList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_products_create",
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Product"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{id}/": {
+            "get": {
+                "operationId": "api_v1_products_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Product"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_products_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Product"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_products_partial_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedProductRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedProductRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Product"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_products_destroy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/shipments/": {
+            "post": {
+                "operationId": "api_v1_shipments_create",
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShipmentRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShipmentRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShipmentRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shipment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/shipments/{id}/": {
+            "get": {
+                "operationId": "api_v1_shipments_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shipment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_shipments_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShipmentRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShipmentRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShipmentRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shipment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_shipments_partial_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedShipmentRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedShipmentRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedShipmentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shipment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_shipments_destroy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/status-updates/": {
+            "post": {
+                "operationId": "api_v1_status_updates_create",
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StatusUpdateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StatusUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/warehouses/": {
+            "get": {
+                "operationId": "api_v1_warehouses_list",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "A search term.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedWarehouseList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_warehouses_create",
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WarehouseRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WarehouseRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WarehouseRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Warehouse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/warehouses/{id}/": {
+            "get": {
+                "operationId": "api_v1_warehouses_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Warehouse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_warehouses_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WarehouseRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WarehouseRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WarehouseRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Warehouse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_warehouses_partial_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedWarehouseRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedWarehouseRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedWarehouseRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Warehouse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_warehouses_destroy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "api"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
         }
-      }
     },
-    "/api/v1/products/{id}/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_products_retrieve",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Product"
+    "components": {
+        "schemas": {
+            "Customer": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 20
+                    },
+                    "address": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "phone"
+                ]
+            },
+            "CustomerRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "phone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 20
+                    },
+                    "address": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "address2": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "address3": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "name",
+                    "phone"
+                ]
+            },
+            "DriverStatus": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "last_seen_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "current_active_shipment_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "current_active_shipment_id",
+                    "id",
+                    "last_seen_at",
+                    "name",
+                    "phone",
+                    "status"
+                ]
+            },
+            "PaginatedCustomerList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Customer"
+                        }
+                    }
                 }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_products_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ProductRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ProductRequest"
-              }
-            },
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ProductRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Product"
+            "PaginatedDriverStatusList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DriverStatus"
+                        }
+                    }
                 }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_products_destroy",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "204" : {
-            "description" : "No response body"
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_products_partial_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedProductRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedProductRequest"
-              }
-            },
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedProductRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Product"
+            "PaginatedProductList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Product"
+                        }
+                    }
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/shipments/" : {
-      "post" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_shipments_create",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ShipmentRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ShipmentRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ShipmentRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Shipment"
+            "PaginatedShipmentList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Shipment"
+                        }
+                    }
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/shipments/{id}/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_shipments_retrieve",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Shipment"
+            },
+            "PaginatedWarehouseList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Warehouse"
+                        }
+                    }
                 }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_shipments_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ShipmentRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ShipmentRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ShipmentRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Shipment"
+            "PatchedCustomerRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "phone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 20
+                    },
+                    "address": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "address2": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "address3": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
                 }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_shipments_destroy",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "204" : {
-            "description" : "No response body"
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_shipments_partial_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedShipmentRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedShipmentRequest"
-              }
-            },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedShipmentRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Shipment"
+            "PatchedProductRequest": {
+                "type": "object",
+                "description": "Product serializer with image upload support and validation.\n\nHandles:\n- Image upload with format and size validation\n- Stock quantity management\n- Shipment count tracking",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "stock_qty": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    }
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/status-updates/" : {
-      "post" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_status_updates_create",
-        "requestBody" : {
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/StatusUpdateRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/StatusUpdateRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StatusUpdate"
+            "PatchedShipmentRequest": {
+                "type": "object",
+                "properties": {
+                    "warehouse": {
+                        "type": "integer"
+                    },
+                    "product": {
+                        "type": "integer"
+                    },
+                    "driver": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "customer": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "customer_address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/warehouses/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_warehouses_list",
-        "parameters" : [ {
-          "name" : "limit",
-          "in" : "query",
-          "description" : "Number of results to return per page.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "description" : "The initial index from which to return the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "ordering",
-          "in" : "query",
-          "description" : "Which field to use when ordering the results.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "search",
-          "in" : "query",
-          "description" : "A search term.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PaginatedWarehouseList"
+            },
+            "PatchedWarehouseRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "location": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    }
                 }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_warehouses_create",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/WarehouseRequest"
-              }
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/WarehouseRequest"
-              }
+            "Product": {
+                "type": "object",
+                "description": "Product serializer with image upload support and validation.\n\nHandles:\n- Image upload with format and size validation\n- Stock quantity management\n- Shipment count tracking",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "stock_qty": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "shipments_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "name",
+                    "price",
+                    "shipments_count"
+                ]
             },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/WarehouseRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Warehouse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/warehouses/{id}/" : {
-      "get" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_warehouses_retrieve",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Warehouse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_warehouses_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/WarehouseRequest"
-              }
+            "ProductRequest": {
+                "type": "object",
+                "description": "Product serializer with image upload support and validation.\n\nHandles:\n- Image upload with format and size validation\n- Stock quantity management\n- Shipment count tracking",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "stock_qty": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "name",
+                    "price"
+                ]
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/WarehouseRequest"
-              }
+            "Shipment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "warehouse": {
+                        "type": "integer"
+                    },
+                    "product": {
+                        "type": "integer"
+                    },
+                    "product_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "driver": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "driver_username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "customer": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "customer_address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "current_status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "current_status",
+                    "customer_name",
+                    "driver_username",
+                    "id",
+                    "product",
+                    "product_name",
+                    "updated_at",
+                    "warehouse"
+                ]
             },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/WarehouseRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Warehouse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_warehouses_destroy",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "204" : {
-            "description" : "No response body"
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "api" ],
-        "operationId" : "api_v1_warehouses_partial_update",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedWarehouseRequest"
-              }
+            "ShipmentRequest": {
+                "type": "object",
+                "properties": {
+                    "warehouse": {
+                        "type": "integer"
+                    },
+                    "product": {
+                        "type": "integer"
+                    },
+                    "driver": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "customer": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "customer_address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "product",
+                    "warehouse"
+                ]
             },
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedWarehouseRequest"
-              }
+            "SignupRequest": {
+                "type": "object",
+                "description": "Signup serializer validating Saudi phone numbers and passwords.\n\nExpected input:\n- name: string (used as username/display name)\n- phone: string in E.164-like format starting with +966 (e.g., +9665XXXXXXXX)\n- password: string, min 8 chars\n- password_confirm: string, must match password",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "phone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 20
+                    },
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 8
+                    },
+                    "password_confirm": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 8
+                    }
+                },
+                "required": [
+                    "name",
+                    "password",
+                    "password_confirm",
+                    "phone"
+                ]
             },
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PatchedWarehouseRequest"
-              }
+            "StatusEnum": {
+                "enum": [
+                    "NEW",
+                    "ASSIGNED",
+                    "IN_TRANSIT",
+                    "DELIVERED"
+                ],
+                "type": "string",
+                "description": "* `NEW` - New\n* `ASSIGNED` - Assigned\n* `IN_TRANSIT` - In transit\n* `DELIVERED` - Delivered"
+            },
+            "StatusUpdate": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "shipment": {
+                        "type": "integer"
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "customer_phone": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/StatusEnum"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "photo": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "latitude": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
+                        "nullable": true
+                    },
+                    "longitude": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
+                        "nullable": true
+                    },
+                    "location_accuracy_m": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64",
+                        "nullable": true,
+                        "description": "GPS accuracy in meters."
+                    }
+                },
+                "required": [
+                    "customer_name",
+                    "customer_phone",
+                    "id",
+                    "shipment",
+                    "status",
+                    "timestamp"
+                ]
+            },
+            "StatusUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "shipment": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/StatusEnum"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "photo": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "latitude": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
+                        "nullable": true
+                    },
+                    "longitude": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
+                        "nullable": true
+                    },
+                    "location_accuracy_m": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64",
+                        "nullable": true,
+                        "description": "GPS accuracy in meters."
+                    }
+                },
+                "required": [
+                    "shipment",
+                    "status"
+                ]
+            },
+            "TokenRefresh": {
+                "type": "object",
+                "properties": {
+                    "access": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "access"
+                ]
+            },
+            "TokenRefreshRequest": {
+                "type": "object",
+                "properties": {
+                    "refresh": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "refresh"
+                ]
+            },
+            "Warehouse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "location",
+                    "name",
+                    "updated_at"
+                ]
+            },
+            "WarehouseRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "location": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "location",
+                    "name"
+                ]
             }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Warehouse"
-                }
-              }
-            }
-          }
         }
-      }
     }
-  },
-  "components" : {
-    "schemas" : {
-      "Customer" : {
-        "required" : [ "id", "name", "phone" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "name" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "phone" : {
-            "maxLength" : 20,
-            "type" : "string"
-          },
-          "address" : {
-            "maxLength" : 255,
-            "type" : "string"
-          }
-        }
-      },
-      "CustomerRequest" : {
-        "required" : [ "name", "phone" ],
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "maxLength" : 255,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "phone" : {
-            "maxLength" : 20,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "address" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "address2" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "address3" : {
-            "maxLength" : 255,
-            "type" : "string"
-          }
-        }
-      },
-      "DriverStatus" : {
-        "required" : [ "current_active_shipment_id", "id", "last_seen_at", "name", "phone", "status" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "name" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "phone" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "status" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "last_seen_at" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          },
-          "current_active_shipment_id" : {
-            "type" : "integer",
-            "readOnly" : true
-          }
-        }
-      },
-      "PaginatedCustomerList" : {
-        "required" : [ "count", "results" ],
-        "type" : "object",
-        "properties" : {
-          "count" : {
-            "type" : "integer",
-            "example" : 123
-          },
-          "next" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=400&limit=100"
-          },
-          "previous" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=200&limit=100"
-          },
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Customer"
-            }
-          }
-        }
-      },
-      "PaginatedDriverStatusList" : {
-        "required" : [ "count", "results" ],
-        "type" : "object",
-        "properties" : {
-          "count" : {
-            "type" : "integer",
-            "example" : 123
-          },
-          "next" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=400&limit=100"
-          },
-          "previous" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=200&limit=100"
-          },
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/DriverStatus"
-            }
-          }
-        }
-      },
-      "PaginatedProductList" : {
-        "required" : [ "count", "results" ],
-        "type" : "object",
-        "properties" : {
-          "count" : {
-            "type" : "integer",
-            "example" : 123
-          },
-          "next" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=400&limit=100"
-          },
-          "previous" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=200&limit=100"
-          },
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Product"
-            }
-          }
-        }
-      },
-      "PaginatedShipmentList" : {
-        "required" : [ "count", "results" ],
-        "type" : "object",
-        "properties" : {
-          "count" : {
-            "type" : "integer",
-            "example" : 123
-          },
-          "next" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=400&limit=100"
-          },
-          "previous" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=200&limit=100"
-          },
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Shipment"
-            }
-          }
-        }
-      },
-      "PaginatedWarehouseList" : {
-        "required" : [ "count", "results" ],
-        "type" : "object",
-        "properties" : {
-          "count" : {
-            "type" : "integer",
-            "example" : 123
-          },
-          "next" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=400&limit=100"
-          },
-          "previous" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true,
-            "example" : "http://api.example.org/accounts/?offset=200&limit=100"
-          },
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Warehouse"
-            }
-          }
-        }
-      },
-      "PatchedCustomerRequest" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "maxLength" : 255,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "phone" : {
-            "maxLength" : 20,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "address" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "address2" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "address3" : {
-            "maxLength" : 255,
-            "type" : "string"
-          }
-        }
-      },
-      "PatchedProductRequest" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "maxLength" : 200,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "price" : {
-            "pattern" : "^-?\\d{0,8}(?:\\.\\d{0,2})?$",
-            "type" : "string",
-            "format" : "decimal"
-          },
-          "unit" : {
-            "maxLength" : 50,
-            "type" : "string"
-          },
-          "stock_qty" : {
-            "maximum" : 9223372036854776000,
-            "minimum" : 0,
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "is_active" : {
-            "type" : "boolean"
-          },
-          "image" : {
-            "type" : "string",
-            "format" : "binary",
-            "nullable" : true
-          }
-        },
-        "description" : "Product serializer with image upload support and validation.\n\nHandles:\n- Image upload with format and size validation\n- Stock quantity management\n- Shipment count tracking"
-      },
-      "PatchedShipmentRequest" : {
-        "type" : "object",
-        "properties" : {
-          "warehouse" : {
-            "type" : "integer"
-          },
-          "product" : {
-            "type" : "integer"
-          },
-          "driver" : {
-            "type" : "integer",
-            "nullable" : true
-          },
-          "customer" : {
-            "type" : "integer",
-            "nullable" : true
-          },
-          "customer_address" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "notes" : {
-            "type" : "string",
-            "nullable" : true
-          }
-        }
-      },
-      "PatchedWarehouseRequest" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "maxLength" : 255,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "location" : {
-            "maxLength" : 255,
-            "minLength" : 1,
-            "type" : "string"
-          }
-        }
-      },
-      "Product" : {
-        "required" : [ "created_at", "id", "name", "price", "shipments_count" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "name" : {
-            "maxLength" : 200,
-            "type" : "string"
-          },
-          "price" : {
-            "pattern" : "^-?\\d{0,8}(?:\\.\\d{0,2})?$",
-            "type" : "string",
-            "format" : "decimal"
-          },
-          "unit" : {
-            "maxLength" : 50,
-            "type" : "string"
-          },
-          "stock_qty" : {
-            "maximum" : 9223372036854776000,
-            "minimum" : 0,
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "is_active" : {
-            "type" : "boolean"
-          },
-          "image" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true
-          },
-          "created_at" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          },
-          "shipments_count" : {
-            "type" : "integer",
-            "readOnly" : true
-          }
-        },
-        "description" : "Product serializer with image upload support and validation.\n\nHandles:\n- Image upload with format and size validation\n- Stock quantity management\n- Shipment count tracking"
-      },
-      "ProductRequest" : {
-        "required" : [ "name", "price" ],
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "maxLength" : 200,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "price" : {
-            "pattern" : "^-?\\d{0,8}(?:\\.\\d{0,2})?$",
-            "type" : "string",
-            "format" : "decimal"
-          },
-          "unit" : {
-            "maxLength" : 50,
-            "type" : "string"
-          },
-          "stock_qty" : {
-            "maximum" : 9223372036854776000,
-            "minimum" : 0,
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "is_active" : {
-            "type" : "boolean"
-          },
-          "image" : {
-            "type" : "string",
-            "format" : "binary",
-            "nullable" : true
-          }
-        },
-        "description" : "Product serializer with image upload support and validation.\n\nHandles:\n- Image upload with format and size validation\n- Stock quantity management\n- Shipment count tracking"
-      },
-      "Shipment" : {
-        "required" : [ "created_at", "current_status", "customer_name", "driver_username", "id", "product", "product_name", "updated_at", "warehouse" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "warehouse" : {
-            "type" : "integer"
-          },
-          "product" : {
-            "type" : "integer"
-          },
-          "product_name" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "driver" : {
-            "type" : "integer",
-            "nullable" : true
-          },
-          "driver_username" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "customer" : {
-            "type" : "integer",
-            "nullable" : true
-          },
-          "customer_name" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "customer_address" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "notes" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "current_status" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "created_at" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          },
-          "updated_at" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          }
-        }
-      },
-      "ShipmentRequest" : {
-        "required" : [ "product", "warehouse" ],
-        "type" : "object",
-        "properties" : {
-          "warehouse" : {
-            "type" : "integer"
-          },
-          "product" : {
-            "type" : "integer"
-          },
-          "driver" : {
-            "type" : "integer",
-            "nullable" : true
-          },
-          "customer" : {
-            "type" : "integer",
-            "nullable" : true
-          },
-          "customer_address" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "notes" : {
-            "type" : "string",
-            "nullable" : true
-          }
-        }
-      },
-      "StatusEnum" : {
-        "type" : "string",
-        "description" : "* `NEW` - New\n* `ASSIGNED` - Assigned\n* `IN_TRANSIT` - In transit\n* `DELIVERED` - Delivered",
-        "enum" : [ "NEW", "ASSIGNED", "IN_TRANSIT", "DELIVERED" ]
-      },
-      "StatusUpdate" : {
-        "required" : [ "customer_name", "customer_phone", "id", "shipment", "status", "timestamp" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "shipment" : {
-            "type" : "integer"
-          },
-          "customer_name" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "customer_phone" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "status" : {
-            "$ref" : "#/components/schemas/StatusEnum"
-          },
-          "timestamp" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          },
-          "note" : {
-            "type" : "string"
-          },
-          "photo" : {
-            "type" : "string",
-            "format" : "uri",
-            "nullable" : true
-          },
-          "latitude" : {
-            "pattern" : "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
-            "type" : "string",
-            "format" : "decimal",
-            "nullable" : true
-          },
-          "longitude" : {
-            "pattern" : "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
-            "type" : "string",
-            "format" : "decimal",
-            "nullable" : true
-          },
-          "location_accuracy_m" : {
-            "maximum" : 9223372036854776000,
-            "minimum" : 0,
-            "type" : "integer",
-            "description" : "GPS accuracy in meters.",
-            "format" : "int64",
-            "nullable" : true
-          }
-        }
-      },
-      "StatusUpdateRequest" : {
-        "required" : [ "shipment", "status" ],
-        "type" : "object",
-        "properties" : {
-          "shipment" : {
-            "type" : "integer"
-          },
-          "status" : {
-            "$ref" : "#/components/schemas/StatusEnum"
-          },
-          "note" : {
-            "type" : "string"
-          },
-          "photo" : {
-            "type" : "string",
-            "format" : "binary",
-            "nullable" : true
-          },
-          "latitude" : {
-            "pattern" : "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
-            "type" : "string",
-            "format" : "decimal",
-            "nullable" : true
-          },
-          "longitude" : {
-            "pattern" : "^-?\\d{0,3}(?:\\.\\d{0,6})?$",
-            "type" : "string",
-            "format" : "decimal",
-            "nullable" : true
-          },
-          "location_accuracy_m" : {
-            "maximum" : 9223372036854776000,
-            "minimum" : 0,
-            "type" : "integer",
-            "description" : "GPS accuracy in meters.",
-            "format" : "int64",
-            "nullable" : true
-          }
-        }
-      },
-      "TokenRefresh" : {
-        "required" : [ "access" ],
-        "type" : "object",
-        "properties" : {
-          "access" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "TokenRefreshRequest" : {
-        "required" : [ "refresh" ],
-        "type" : "object",
-        "properties" : {
-          "refresh" : {
-            "minLength" : 1,
-            "type" : "string",
-            "writeOnly" : true
-          }
-        }
-      },
-      "Warehouse" : {
-        "required" : [ "created_at", "id", "location", "name", "updated_at" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "name" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "location" : {
-            "maxLength" : 255,
-            "type" : "string"
-          },
-          "created_at" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          },
-          "updated_at" : {
-            "type" : "string",
-            "format" : "date-time",
-            "readOnly" : true
-          }
-        }
-      },
-      "WarehouseRequest" : {
-        "required" : [ "location", "name" ],
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "maxLength" : 255,
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "location" : {
-            "maxLength" : 255,
-            "minLength" : 1,
-            "type" : "string"
-          }
-        }
-      }
-    }
-  }
 }
