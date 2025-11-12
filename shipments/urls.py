@@ -12,7 +12,7 @@ from shipments.views import (
     StatusUpdateCreateView, WarehouseListCreateView, WarehouseDetailView, 
     CustomerListCreateView, CustomerDetailView, CustomerAddressesView,
     ShipmentsListView, AutocompleteShipmentsView, AutocompleteCustomersView,
-    DriverStatusView, ProductListCreateView, ProductDetailView,
+    DriverStatusView, DriverDetailManagerView, ProductListCreateView, ProductDetailView,
 )
 
 # API version prefix
@@ -60,6 +60,7 @@ urlpatterns = [
     # DRIVER MANAGEMENT ENDPOINTS (Manager only)
     # ============================================================================
     path(f"{API_PREFIX}/drivers/", DriverStatusView.as_view({"get": "list"}), name="driver-status-list"),
+    path(f"{API_PREFIX}/drivers/<int:pk>/", DriverDetailManagerView.as_view(), name="driver-detail"),
 
     # ============================================================================
     # AUTOCOMPLETE ENDPOINTS (Manager only)

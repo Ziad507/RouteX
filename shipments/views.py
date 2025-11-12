@@ -2,6 +2,7 @@ from rest_framework import generics, status, serializers
 from django.db.models import Count, ProtectedError, OuterRef, Subquery, Case, When, Value, BooleanField, F, Q
 from rest_framework.response import Response
 from rest_framework import viewsets
+from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils.dateparse import parse_datetime
 from rest_framework import serializers as drf_serializers
@@ -293,6 +294,79 @@ class DriverStatusView(viewsets.ReadOnlyModelViewSet):
             .order_by("user__username", "pk")
         )
         return qs
+
+
+@extend_schema(
+    tags=["Drivers"],
+    summary="عرض تفاصيل سائق محدد",
+    description="يعرض بيانات السائق (الحالة، المستخدم المرتبط). يتطلب صلاحيات مدير مستودع.",
+    responses={
+        200: OpenApiResponse(
+            description="تفاصيل السائق",
+            response=inline_serializer(
+                name="DriverDetailResponse",
+                fields={
+                    "id": serializers.IntegerField(),
+                    "user_id": serializers.IntegerField(),
+                    "username": serializers.CharField(),
+                    "phone": serializers.CharField(),
+                    "is_active": serializers.BooleanField(),
+                    "status": serializers.CharField(help_text="available or busy"),
+                },
+            ),
+        ),
+        404: OpenApiResponse(description="السائق غير موجود"),
+    },
+)
+class DriverDetailManagerView(APIView):
+    """
+    GET: عرض حالة السائق وبياناته باستخدام معرّف السائق.
+    DELETE: حذف السائق (والحساب المرتبط) نهائياً.
+    """
+    permission_classes = [IsWarehouseManager]
+
+    def _get_driver(self, pk: int) -> Driver:
+        return Driver.objects.select_related("user").get(pk=pk)
+
+    def get(self, request, pk: int):
+        try:
+            driver = self._get_driver(pk)
+        except Driver.DoesNotExist:
+            return Response({"detail": "Driver not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        status_text = "available" if driver.is_active else "busy"
+        return Response({
+            "id": driver.id,
+            "user_id": driver.user.id,
+            "username": driver.user.username,
+            "phone": driver.user.phone,
+            "is_active": driver.is_active,
+            "status": status_text,
+        })
+
+    @extend_schema(
+        tags=["Drivers"],
+        summary="حذف سائق",
+        description="يحذف السائق والحساب المرتبط به. هذه العملية لا يمكن التراجع عنها.",
+        responses={
+            200: OpenApiResponse(description="تم حذف السائق"),
+            404: OpenApiResponse(description="السائق غير موجود"),
+        },
+    )
+    def delete(self, request, pk: int):
+        try:
+            driver = self._get_driver(pk)
+        except Driver.DoesNotExist:
+            return Response({"detail": "Driver not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # حذف المستخدم المرتبط سيحذف السائق بسبب العلاقة OneToOne
+        user_username = driver.user.username
+        driver.user.delete()
+
+        return Response(
+            {"detail": f"Driver '{user_username}' deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
 
 
 # 14) list shipments assigned to the logged-in driver
