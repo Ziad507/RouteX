@@ -554,8 +554,8 @@ class DriverStatusSerializer(serializers.ModelSerializer):
         ]
 
     def get_phone(self, obj) -> str:
-        """Return masked phone number for privacy."""
-        return mask_phone(obj.user.phone)
+        """Return phone number."""
+        return obj.user.phone or ""
     
     def get_status(self, obj) -> str:
         """

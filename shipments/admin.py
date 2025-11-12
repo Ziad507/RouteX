@@ -995,10 +995,13 @@ class StatusUpdateAdmin(admin.ModelAdmin):
         """Display GPS info if available."""
         if obj.latitude and obj.longitude:
             maps_url = f"https://www.google.com/maps?q={obj.latitude},{obj.longitude}"
+            # Format coordinates before passing to format_html
+            lat_formatted = f"{obj.latitude:.4f}"
+            lng_formatted = f"{obj.longitude:.4f}"
             return format_html(
                 '<a href="{}" target="_blank" style="color: #10b981; text-decoration: none;">'
-                '📍 GPS ({:.4f}, {:.4f})</a>',
-                maps_url, obj.latitude, obj.longitude
+                '📍 GPS ({}, {})</a>',
+                maps_url, lat_formatted, lng_formatted
             )
         return format_html('<span style="color: #94a3b8; font-size: 11px;">No GPS data</span>')
     

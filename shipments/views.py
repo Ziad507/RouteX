@@ -356,13 +356,12 @@ class DriverDetailManagerView(APIView):
             return Response({"detail": "Driver not found."}, status=status.HTTP_404_NOT_FOUND)
 
         status_text = "available" if driver.is_active else "busy"
-        from users.utils import mask_phone
         
         return Response({
             "id": driver.id,
             "user_id": driver.user.id,
             "username": driver.user.username,
-            "phone": mask_phone(driver.user.phone),  # Masked for privacy
+            "phone": driver.user.phone or "",
             "is_active": driver.is_active,
             "status": status_text,
         })
