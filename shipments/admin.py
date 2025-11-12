@@ -4,47 +4,123 @@ from .models import Driver, WarehouseManager, Warehouse, Customer, Shipment, Sta
 
 
 class DriverAdminForm(forms.ModelForm):
+    """
+    Form validation for Driver admin to prevent role conflicts.
+    Ensures a user cannot be both a Driver and WarehouseManager simultaneously.
+    """
     class Meta:
         model = Driver
         fields = ["user", "is_active"]
 
     def clean_user(self):
-        u = self.cleaned_data["user"]
+        """
+        Validate that the selected user doesn't already have a WarehouseManager profile.
+        """
+        u = self.cleaned_data.get("user")
+        if not u:
+            return u
+        
+        # Check if user already has WarehouseManager profile
         if WarehouseManager.objects.filter(user=u).exists():
-            raise forms.ValidationError("This user already has a Driver profile.")
+            raise forms.ValidationError(
+                f"User '{u.username}' already has a Warehouse Manager profile. "
+                "A user cannot be both a Driver and a Warehouse Manager."
+            )
         return u
 
 @admin.register(Driver)
 class DriverAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing Driver profiles.
+    Provides search, filtering, and status management capabilities.
+    """
     form = DriverAdminForm
     autocomplete_fields = ["user"]
-    list_display = ("id", "user_username", "user_phone", "is_active")
+    list_display = ("id", "user_username", "user_phone", "is_active", "get_status_badge")
     search_fields = ("user__username", "user__phone")
     list_filter = ("is_active",)
-
-    def user_username(self, obj): return obj.user.username
-    def user_phone(self, obj): return obj.user.phone
+    list_editable = ("is_active",)  # Allow quick toggling of status
+    readonly_fields = ("user",)  # Prevent changing user after creation
+    
+    def user_username(self, obj):
+        """Display driver's username."""
+        return obj.user.username
+    user_username.short_description = "Username"
+    
+    def user_phone(self, obj):
+        """Display driver's phone number."""
+        return obj.user.phone
+    user_phone.short_description = "Phone"
+    
+    def get_status_badge(self, obj):
+        """Display driver status as a colored badge."""
+        from django.utils.html import format_html
+        if obj.is_active:
+            return format_html(
+                '<span style="background: #10b981; color: white; padding: 4px 10px; '
+                'border-radius: 12px; font-size: 11px; font-weight: 600;">Available</span>'
+            )
+        return format_html(
+            '<span style="background: #ef4444; color: white; padding: 4px 10px; '
+            'border-radius: 12px; font-size: 11px; font-weight: 600;">Busy</span>'
+        )
+    get_status_badge.short_description = "Status"
 
 class WarehouseManagerAdminForm(forms.ModelForm):
+    """
+    Form validation for WarehouseManager admin to prevent role conflicts.
+    Ensures a user cannot be both a Driver and WarehouseManager simultaneously.
+    """
     class Meta:
         model = WarehouseManager
         fields = ["user"]
 
     def clean_user(self):
-        u = self.cleaned_data["user"]
+        """
+        Validate that the selected user doesn't already have a Driver profile.
+        """
+        u = self.cleaned_data.get("user")
+        if not u:
+            return u
+        
+        # Check if user already has Driver profile
         if Driver.objects.filter(user=u).exists():
-            raise forms.ValidationError("This user already has a Warehousing Manager profile.")
+            raise forms.ValidationError(
+                f"User '{u.username}' already has a Driver profile. "
+                "A user cannot be both a Driver and a Warehouse Manager."
+            )
         return u
 
 @admin.register(WarehouseManager)
 class WarehouseManagerAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing Warehouse Manager profiles.
+    Provides search and filtering capabilities.
+    """
     form = WarehouseManagerAdminForm
     autocomplete_fields = ["user"]
-    list_display = ("id", "user_username", "user_phone")
+    list_display = ("id", "user_username", "user_phone", "get_role_badge")
     search_fields = ("user__username", "user__phone")
-
-    def user_username(self, obj): return obj.user.username
-    def user_phone(self, obj): return obj.user.phone
+    readonly_fields = ("user",)  # Prevent changing user after creation
+    
+    def user_username(self, obj):
+        """Display warehouse manager's username."""
+        return obj.user.username
+    user_username.short_description = "Username"
+    
+    def user_phone(self, obj):
+        """Display warehouse manager's phone number."""
+        return obj.user.phone
+    user_phone.short_description = "Phone"
+    
+    def get_role_badge(self, obj):
+        """Display role as a colored badge."""
+        from django.utils.html import format_html
+        return format_html(
+            '<span style="background: #3b82f6; color: white; padding: 4px 10px; '
+            'border-radius: 12px; font-size: 11px; font-weight: 600;">📦 Warehouse Manager</span>'
+        )
+    get_role_badge.short_description = "Role"
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):

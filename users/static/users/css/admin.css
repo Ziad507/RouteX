@@ -1,94 +1,213 @@
-/* Custom styling for Jazzmin-themed admin */
+/* Modern Custom Styling for Jazzmin Admin - RouteX */
 
+/* Global body styling with gradient background */
 body.jazzmin-admin {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0ea5e9 100%);
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
 }
 
+/* Brand/Logo styling */
 .brand-link {
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
 }
 
 .brand-link .brand-text {
     font-weight: 700;
     letter-spacing: 0.08em;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
+/* Main header/navbar */
 .main-header.navbar {
-    background: rgba(15, 23, 42, 0.9) !important;
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Sidebar navigation links */
+.nav-sidebar .nav-link {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+    margin: 4px 8px;
 }
 
 .nav-sidebar .nav-link.active {
     background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
     color: #0f172a !important;
     font-weight: 600;
-    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
+    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+    transform: translateX(4px);
 }
 
-.nav-sidebar .nav-link:hover {
+.nav-sidebar .nav-link:hover:not(.active) {
     background: rgba(14, 165, 233, 0.15);
     color: #e0f2fe;
+    transform: translateX(4px);
 }
 
+/* Content wrapper */
 .content-wrapper {
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
 }
 
+/* Cards and boxes */
 .card,
 .info-box,
 .small-box {
-    border-radius: 18px;
-    border: none;
-    background: rgba(15, 23, 42, 0.85);
-    box-shadow: 0 20px 40px rgba(8, 47, 73, 0.35);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 20px 40px rgba(8, 47, 73, 0.4);
     color: #e2e8f0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover,
+.info-box:hover,
+.small-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(8, 47, 73, 0.5);
 }
 
 .card .card-header {
-    border-bottom: none;
-    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 41, 59, 0.5);
     font-weight: 600;
+    padding: 1.25rem;
+    border-radius: 20px 20px 0 0;
 }
 
+/* Buttons */
 .btn-primary {
     background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
-    border-color: transparent;
+    border: none;
+    border-radius: 12px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
     box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
+    transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(56, 189, 248, 0.5);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-secondary {
+    background: rgba(148, 163, 184, 0.2);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 12px;
+    color: #e2e8f0;
+}
+
+/* Tables */
+.table {
+    background: rgba(15, 23, 42, 0.7);
+    border-radius: 16px;
+    overflow: hidden;
 }
 
 .table thead th {
-    background: rgba(14, 116, 144, 0.25);
+    background: rgba(14, 116, 144, 0.3);
     border: none;
     color: #bae6fd;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    font-weight: 600;
+    padding: 1rem;
 }
 
 .table tbody td {
     border-top: 1px solid rgba(148, 163, 184, 0.15);
+    padding: 1rem;
+    color: #e2e8f0;
 }
 
+.table tbody tr:hover {
+    background: rgba(14, 165, 233, 0.1);
+}
+
+/* Form inputs */
+.form-control,
+select.form-control {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 10px;
+    color: #e2e8f0;
+    padding: 0.625rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+select.form-control:focus {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    color: #e2e8f0;
+}
+
+/* Inline forms styling */
+.inline-group {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.inline-group h2 {
+    color: #bae6fd;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Login page */
 .login-page,
 .register-page {
     background: linear-gradient(160deg, #020617 0%, #0f172a 35%, #0ea5e9 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .login-box .card {
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 25px 55px rgba(8, 47, 73, 0.55);
+    box-shadow: 0 25px 55px rgba(8, 47, 73, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .login-box .card-body {
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(15, 23, 42, 0.95);
     color: #e2e8f0;
+    padding: 2.5rem;
 }
 
 .login-logo a {
@@ -96,5 +215,111 @@ body.jazzmin-admin {
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    font-size: 1.5rem;
+    text-decoration: none;
+}
+
+/* Badges and labels */
+.badge {
+    border-radius: 12px;
+    padding: 0.375rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Action buttons in list view */
+.object-tools {
+    margin-bottom: 1rem;
+}
+
+.object-tools a {
+    background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+    transition: all 0.3s ease;
+}
+
+.object-tools a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+}
+
+/* Messages/alerts */
+.alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+    border-left: 4px solid #10b981;
+}
+
+.alert-error,
+.alert-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border-left: 4px solid #ef4444;
+}
+
+.alert-info {
+    background: rgba(14, 165, 233, 0.2);
+    color: #7dd3fc;
+    border-left: 4px solid #0ea5e9;
+}
+
+/* Checkboxes and radio buttons */
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: #0ea5e9;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Select dropdowns */
+select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23bae6fd' viewBox='0 0 16 16'%3E%3Cpath d='M8 10L3 5h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 1rem;
+    }
+    
+    .card {
+        border-radius: 16px;
+    }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(14, 165, 233, 0.5);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(14, 165, 233, 0.7);
 }
 
