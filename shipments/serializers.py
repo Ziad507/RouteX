@@ -359,11 +359,14 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
 
 # DRIVER STATUS (for manager dashboard)
 class DriverStatusSerializer(serializers.ModelSerializer):
-    name  = serializers.CharField(source="user.username", read_only=True)
-    phone = serializers.CharField(source="user.phone",    read_only=True)
+    """Serialize driver state for manager dashboards with explicit availability flags."""
+
+    name = serializers.CharField(source="user.username", read_only=True)
+    phone = serializers.CharField(source="user.phone", read_only=True)
     status = serializers.SerializerMethodField()
     last_seen_at = serializers.DateTimeField(read_only=True)
     current_active_shipment_id = serializers.IntegerField(read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model  = Driver
@@ -371,15 +374,20 @@ class DriverStatusSerializer(serializers.ModelSerializer):
             "id",
             "name", "phone",
             "status",
+            "is_active",
             "last_seen_at",
             "current_active_shipment_id",
         ]
 
     def get_status(self, obj) -> str:
-        # busy if has active shipment
+        """
+        Derive a human readable status:
+        - Busy if the driver currently has an active shipment assigned.
+        - Available if the driver marked themselves available (even without open shipments).
+        - Unavailable otherwise.
+        """
         if getattr(obj, "current_active_shipment_id", None):
             return "Busy"
-        # available if effectively active
-        if getattr(obj, "effective_is_active", False):
+        if getattr(obj, "is_active", False):
             return "Available"
         return "Unavailable"
