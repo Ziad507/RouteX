@@ -17,6 +17,7 @@ from .serializers import (
 
 
 # 1) product list/create (warehouse manager only)
+@extend_schema(tags=["Products"])
 class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsWarehouseManager]
@@ -25,6 +26,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
 
 
 # 2) product detail/update/delete (warehouse manager only)
+@extend_schema(tags=["Products"])
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsWarehouseManager]
@@ -47,6 +49,7 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # 3) Shipment create (warehouse manager only)
+@extend_schema(tags=["Shipments"])
 class ShipmentCreateView(generics.CreateAPIView):
     queryset = Shipment.objects.select_related("product", "warehouse", "driver__user", "customer")
     serializer_class = ShipmentSerializer
@@ -54,6 +57,7 @@ class ShipmentCreateView(generics.CreateAPIView):
 
 
 # 4) detail/update/delete shipment (warehouse manager only)
+@extend_schema(tags=["Shipments"])
 class ShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Shipment.objects.select_related("product", "warehouse", "driver__user", "customer")
     serializer_class = ShipmentSerializer
@@ -76,6 +80,7 @@ class ShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # 5) shipments list (warehouse manager only)
+@extend_schema(tags=["Shipments"])
 class ShipmentsListView(generics.ListAPIView):
     permission_classes = [IsWarehouseManager]
     serializer_class = ShipmentSerializer
@@ -94,6 +99,7 @@ class ShipmentsListView(generics.ListAPIView):
 
 
 # 6) Autocomplete shipments (warehouse manager only)
+@extend_schema(tags=["Autocomplete"])
 class AutocompleteShipmentsView(generics.ListAPIView):
     serializer_class = ShipmentSerializer
     permission_classes = [IsWarehouseManager]
@@ -116,6 +122,7 @@ class AutocompleteShipmentsView(generics.ListAPIView):
 
 
 # 7) warehouse create (warehouse manager only)
+@extend_schema(tags=["Warehouses"])
 class WarehouseListCreateView(generics.ListCreateAPIView):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
@@ -123,6 +130,7 @@ class WarehouseListCreateView(generics.ListCreateAPIView):
 
 
 # 8) detail/update/delete warehouse (warehouse manager only)
+@extend_schema(tags=["Warehouses"])
 class WarehouseDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = WarehouseSerializer
     permission_classes = [IsWarehouseManager]
@@ -137,6 +145,7 @@ class WarehouseDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # 9) customer create (warehouse manager only)
+@extend_schema(tags=["Customers"])
 class CustomerListCreateView(generics.ListCreateAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -144,6 +153,7 @@ class CustomerListCreateView(generics.ListCreateAPIView):
 
 
 # 10) detail/update/delete customer (warehouse manager only)
+@extend_schema(tags=["Customers"])
 class CustomerDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -188,6 +198,7 @@ class CustomerAddressesView(generics.RetrieveAPIView):
 
 
 # 12) Autocomplete customers (warehouse manager only)
+@extend_schema(tags=["Autocomplete"])
 class AutocompleteCustomersView(generics.ListAPIView):
     """
     Query parameter: q
@@ -234,6 +245,7 @@ class AutocompleteCustomersView(generics.ListAPIView):
 
 
 # 13) driver status list (warehouse manager only)
+@extend_schema(tags=["Drivers"])
 class DriverStatusView(viewsets.ReadOnlyModelViewSet):
     serializer_class = DriverStatusSerializer
     permission_classes = [IsWarehouseManager]
@@ -284,6 +296,7 @@ class DriverStatusView(viewsets.ReadOnlyModelViewSet):
 
 
 # 14) list shipments assigned to the logged-in driver
+@extend_schema(tags=["Driver"])
 class DriverShipmentsList(generics.ListAPIView):
     serializer_class = ShipmentSerializer
     permission_classes = [IsDriver]
@@ -321,6 +334,7 @@ class DriverShipmentsList(generics.ListAPIView):
 
 
 # 15) driver posts a status update for a shipment
+@extend_schema(tags=["Driver"])
 class StatusUpdateCreateView(generics.CreateAPIView):
     parser_classes = [MultiPartParser, FormParser]
     queryset = StatusUpdate.objects.select_related("shipment", "shipment__driver", "shipment__product")

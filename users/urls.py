@@ -7,8 +7,7 @@ API versioning: v1
 """
 
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-from .views import LoginView, whois, SignupView
+from .views import LoginView, whois, SignupView, DriverStatusUpdateView, TokenRefreshView
 
 # API version prefix
 API_PREFIX = "api/v1"
@@ -25,6 +24,11 @@ urlpatterns = [
     # USER PROFILE ENDPOINTS (Authenticated)
     # ============================================================================
     path(f"{API_PREFIX}/auth/whoami/", whois, name="auth-whoami"),
+    
+    # ============================================================================
+    # DRIVER STATUS ENDPOINTS (Driver only)
+    # ============================================================================
+    path(f"{API_PREFIX}/driver/status/", DriverStatusUpdateView.as_view(), name="driver-status-update"),
 ]
 
 

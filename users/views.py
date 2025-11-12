@@ -14,16 +14,28 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework import serializers
 from shipments.models import WarehouseManager, Driver
+from shipments.permissions import IsDriver
 from django.db import transaction, IntegrityError
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, OpenApiTypes, inline_serializer
 import logging
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+@extend_schema(
+    tags=["Auth"],
+    summary="تحديث Access Token",
+    description="يستخدم Refresh Token للحصول على Access Token جديد.",
+)
+class TokenRefreshView(BaseTokenRefreshView):
+    """Wrapper for TokenRefreshView with Swagger documentation."""
+    pass
 
 
 def normalize_phone(phone: str) -> str:
@@ -338,4 +350,142 @@ class SignupView(APIView):
                 "phone": user.phone,
             }
         }, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    tags=["Driver"],
+    summary="عرض وتحديث حالة السائق (متاح/مشغول)",
+    description="GET: يعرض الحالة الحالية للسائق. PATCH: يسمح للسائق بتحديث حالته من متاح (available) إلى مشغول (busy) والعكس.",
+    methods=["GET"],
+    responses={
+        200: OpenApiResponse(
+            description="الحالة الحالية للسائق",
+            response=inline_serializer(
+                name="DriverStatusResponse",
+                fields={
+                    "id": serializers.IntegerField(),
+                    "username": serializers.CharField(),
+                    "phone": serializers.CharField(),
+                    "is_active": serializers.BooleanField(),
+                    "status": serializers.CharField(help_text="متاح أو مشغول"),
+                },
+            ),
+        ),
+        403: OpenApiResponse(description="المستخدم ليس سائق أو لا يوجد ملف سائق"),
+    },
+)
+@extend_schema(
+    tags=["Driver"],
+    summary="عرض وتحديث حالة السائق (متاح/مشغول)",
+    description="GET: يعرض الحالة الحالية للسائق. PATCH: يسمح للسائق بتحديث حالته من متاح (available) إلى مشغول (busy) والعكس.",
+    methods=["PATCH"],
+    request=inline_serializer(
+        name="DriverStatusUpdateRequest",
+        fields={
+            "is_active": serializers.BooleanField(
+                help_text="True = متاح (available), False = مشغول (busy)"
+            ),
+        },
+    ),
+    responses={
+        200: OpenApiResponse(
+            description="تم تحديث الحالة بنجاح",
+            response=inline_serializer(
+                name="DriverStatusResponse",
+                fields={
+                    "id": serializers.IntegerField(),
+                    "username": serializers.CharField(),
+                    "phone": serializers.CharField(),
+                    "is_active": serializers.BooleanField(),
+                    "status": serializers.CharField(help_text="متاح أو مشغول"),
+                },
+            ),
+        ),
+        403: OpenApiResponse(description="المستخدم ليس سائق أو لا يوجد ملف سائق"),
+        400: OpenApiResponse(description="بيانات غير صحيحة"),
+    },
+    examples=[
+        OpenApiExample(
+            "تحديث لمتاح",
+            value={"is_active": True},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "تحديث لمشغول",
+            value={"is_active": False},
+            request_only=True,
+        ),
+    ],
+)
+class DriverStatusUpdateView(APIView):
+    """
+    Endpoint لعرض وتحديث حالة السائق (متاح/مشغول).
+    
+    GET /api/v1/driver/status/ - يعرض الحالة الحالية
+    PATCH /api/v1/driver/status/ - يحدث الحالة
+    Body: {"is_active": true/false}
+    Returns: {"id": 1, "username": "...", "phone": "...", "is_active": true/false, "status": "متاح/مشغول"}
+    """
+    permission_classes = [IsDriver]
+
+    def get(self, request):
+        """قراءة حالة السائق الحالية."""
+        try:
+            driver = Driver.objects.get(user=request.user)
+        except Driver.DoesNotExist:
+            return Response(
+                {"detail": "Driver profile not found."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        status_text = "متاح" if driver.is_active else "مشغول"
+
+        return Response({
+            "id": driver.user.id,
+            "username": driver.user.username,
+            "phone": driver.user.phone,
+            "is_active": driver.is_active,
+            "status": status_text,
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        """تحديث حالة السائق (is_active)."""
+        try:
+            driver = Driver.objects.get(user=request.user)
+        except Driver.DoesNotExist:
+            return Response(
+                {"detail": "Driver profile not found."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        is_active = request.data.get("is_active")
+        
+        if is_active is None:
+            return Response(
+                {"detail": "is_active field is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not isinstance(is_active, bool):
+            return Response(
+                {"detail": "is_active must be a boolean value (true/false)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # تحديث الحالة
+        driver.is_active = is_active
+        driver.save(update_fields=["is_active"])
+
+        # تحديد حالة نصية للعرض
+        status_text = "متاح" if is_active else "مشغول"
+
+        logger.info(f"Driver {driver.user.username} updated status to {'available' if is_active else 'busy'}")
+
+        return Response({
+            "id": driver.user.id,
+            "username": driver.user.username,
+            "phone": driver.user.phone,
+            "is_active": driver.is_active,
+            "status": status_text,
+        }, status=status.HTTP_200_OK)
 
