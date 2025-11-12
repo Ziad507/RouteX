@@ -48,7 +48,9 @@ class AdminErrorLoggingMiddleware:
                 f"Traceback:\n{error_trace}"
             )
         
-        return None  # Let Django handle the exception normally
+        # Don't interfere with Django's exception handling
+        # Return None to let Django handle it normally
+        return None
 
 
 def get_recent_errors(log_file_path: Path, lines: int = 50) -> list:

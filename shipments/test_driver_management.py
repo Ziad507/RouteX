@@ -90,6 +90,6 @@ class TestDriverListManager:
         driver_payload = response.data["results"][0]
 
         assert driver_payload["is_active"] is False
-        assert driver_payload["status"] == "Unavailable"
+        assert driver_payload["status"] == "Unavailable"  # is_active=False maps to "Unavailable"
 
 

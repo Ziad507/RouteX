@@ -25,7 +25,6 @@ class TestProductListCreate:
     def test_manager_can_list_products(self, manager_client, product):
         """Test that managers can list products."""
         response = manager_client.get(self.url)
-        
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) >= 1
         assert response.data["results"][0]["name"] == "Test Product"

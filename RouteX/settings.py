@@ -324,8 +324,12 @@ else:
 # Database connection pooling configuration
 USE_DB_POOLING = env.bool("USE_DB_POOLING", default=False)
 
-if USE_SQLITE or not os.getenv("DB_NAME"):
-    # SQLite configuration (easier for local development)
+# Smart database selection: Use SQLite if explicitly set OR if DB_NAME is not set/empty
+DB_NAME_ENV = os.getenv("DB_NAME", "").strip()
+USE_SQLITE_FINAL = USE_SQLITE or not DB_NAME_ENV
+
+if USE_SQLITE_FINAL:
+    # SQLite configuration (easier for local development and PythonAnywhere)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -339,7 +343,7 @@ else:
         DATABASES = {
             "default": {
                 "ENGINE": "django_db_connection_pool.backends.postgresql",
-                "NAME": os.getenv("DB_NAME", "routex"),
+                "NAME": DB_NAME_ENV or "routex",
                 "USER": os.getenv("DB_USER", "routex_user"),
                 "PASSWORD": os.getenv("DB_PASSWORD", ""),
                 "HOST": os.getenv("DB_HOST", "127.0.0.1"),
@@ -355,7 +359,7 @@ else:
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.postgresql",
-                "NAME": os.getenv("DB_NAME", "routex"),
+                "NAME": DB_NAME_ENV or "routex",
                 "USER": os.getenv("DB_USER", "routex_user"),
                 "PASSWORD": os.getenv("DB_PASSWORD", ""),
                 "HOST": os.getenv("DB_HOST", "127.0.0.1"),

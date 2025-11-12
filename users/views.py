@@ -361,7 +361,7 @@ class SignupView(APIView):
         200: OpenApiResponse(
             description="الحالة الحالية للسائق",
             response=inline_serializer(
-                name="DriverStatusResponse",
+                name="DriverStatusGetResponse",
                 fields={
                     "id": serializers.IntegerField(),
                     "username": serializers.CharField(),
@@ -391,7 +391,7 @@ class SignupView(APIView):
         200: OpenApiResponse(
             description="تم تحديث الحالة بنجاح",
             response=inline_serializer(
-                name="DriverStatusResponse",
+                name="DriverStatusUpdateResponse",
                 fields={
                     "id": serializers.IntegerField(),
                     "username": serializers.CharField(),

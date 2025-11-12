@@ -10,7 +10,7 @@ Tests:
 
 import pytest
 from rest_framework import status
-from shipments.models import Shipment, ShipmentStatus, Product
+from shipments.models import Shipment, ShipmentStatus, Product, Driver
 
 
 @pytest.mark.django_db

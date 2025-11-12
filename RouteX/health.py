@@ -32,10 +32,22 @@ def health_check(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        status["database"] = "connected"
+        # Get database engine name for better status message
+        db_engine = settings.DATABASES['default']['ENGINE']
+        if 'sqlite' in db_engine:
+            status["database"] = "connected (SQLite)"
+        elif 'postgresql' in db_engine:
+            status["database"] = "connected (PostgreSQL)"
+        else:
+            status["database"] = "connected"
         logger.info("Health check: Database connection OK")
     except Exception as e:
-        status["database"] = f"error: {str(e)}"
+        # More user-friendly error message
+        error_msg = str(e)
+        if "Connection refused" in error_msg or "5432" in error_msg:
+            status["database"] = "error: PostgreSQL not available. Set USE_SQLITE=True in .env to use SQLite."
+        else:
+            status["database"] = f"error: {error_msg[:100]}"  # Limit error message length
         status["status"] = "unhealthy"
         http_status = 503
         logger.error(f"Health check: Database connection failed - {e}")

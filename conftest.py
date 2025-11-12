@@ -9,6 +9,7 @@ Provides:
 """
 
 import pytest
+import os
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from shipments.models import (
@@ -17,6 +18,22 @@ from shipments.models import (
 )
 
 User = get_user_model()
+
+# Force SQLite for tests
+os.environ.setdefault("USE_SQLITE", "True")
+os.environ.setdefault("DB_NAME", "")
+
+
+@pytest.fixture(autouse=True)
+def setup_test_environment(settings):
+    """Configure test environment settings."""
+    # Force SQLite for tests
+    settings.USE_SQLITE = True
+    settings.DB_NAME = ""
+    # Disable APPEND_SLASH to prevent 301 redirects in tests
+    settings.APPEND_SLASH = False
+    # Disable SECURE_SSL_REDIRECT for tests
+    settings.SECURE_SSL_REDIRECT = False
 
 
 @pytest.fixture

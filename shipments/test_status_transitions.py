@@ -128,12 +128,12 @@ class TestStatusUpdateAPI:
     
     def test_valid_transition_new_to_assigned(self, driver_client, test_shipment, driver_user):
         """Test valid transition: NEW → ASSIGNED."""
-        # Assign driver to shipment
+        # Assign driver to shipment but keep status NEW
         test_shipment.driver = Driver.objects.get(user=driver_user)
-        test_shipment.current_status = ShipmentStatus.ASSIGNED
+        test_shipment.current_status = ShipmentStatus.NEW  # Keep it NEW
         test_shipment.save()
         
-        # Create status update
+        # Create status update to move NEW → ASSIGNED
         url = "/api/v1/status-updates/"
         data = {
             "shipment": test_shipment.id,

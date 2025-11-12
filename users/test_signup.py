@@ -14,6 +14,7 @@ from shipments.models import Driver
 
 User = get_user_model()
 
+# URLs without trailing slash to match Django routing
 SIGNUP_URL = "/api/v1/auth/signup/"
 LOGIN_URL = "/api/v1/auth/login/"
 
