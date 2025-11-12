@@ -38,6 +38,9 @@ if not DEBUG and not SECRET_KEY:
 
 # Application definition
 INSTALLED_APPS = [
+    # Admin theme
+    'jazzmin',
+
     # Django core apps
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,6 +59,49 @@ INSTALLED_APPS = [
     "shipments",
     "users",
 ]
+
+JAZZMIN_SETTINGS = {
+    "site_title": "RouteX Admin",
+    "site_header": "RouteX Control Center",
+    "site_brand": "RouteX",
+    "welcome_sign": "Welcome to RouteX Operations Portal",
+    "site_logo_classes": "img-circle",
+    "topmenu_links": [
+        {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"app": "users"},
+        {"app": "shipments"},
+        {"name": "API Docs", "url": "/api/docs/", "new_window": True},
+    ],
+    "usermenu_links": [
+        {"name": "Visit Site", "url": "/", "new_window": True},
+        {"name": "Swagger UI", "url": "/api/docs/", "new_window": True},
+    ],
+    "show_ui_builder": False,
+    "navigation_expanded": True,
+    "hide_models": [
+        "auth.Group",
+        "auth.Permission",
+    ],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "users.CustomUser": "fas fa-user",
+        "shipments.Driver": "fas fa-truck",
+        "shipments.Shipment": "fas fa-boxes",
+        "shipments.Product": "fas fa-box-open",
+        "shipments.Warehouse": "fas fa-warehouse",
+        "shipments.Customer": "fas fa-user-friends",
+        "shipments.StatusUpdate": "fas fa-stream",
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "cosmo",
+    "navbar": "navbar-dark bg-primary",
+    "sidebar": "sidebar-dark-primary",
+    "actions_sticky_top": True,
+    "body_small_text": False,
+    "brand_logo": "",
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
