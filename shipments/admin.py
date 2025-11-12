@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.db.models import Count, Q, F
 from .models import Driver, WarehouseManager, Warehouse, Customer, Shipment, StatusUpdate, Product
+from .constants import LOW_STOCK_THRESHOLD
 
 
 # ============================================================================
@@ -356,7 +357,7 @@ class ProductAdmin(admin.ModelAdmin):
             color = "#ef4444"
             text = "Out of Stock"
             icon = "❌"
-        elif obj.stock_qty < 10:
+        elif obj.stock_qty < LOW_STOCK_THRESHOLD:
             color = "#f59e0b"
             text = f"Low Stock ({obj.stock_qty})"
             icon = "⚠"
@@ -433,7 +434,7 @@ class ProductAdmin(admin.ModelAdmin):
     
     def restock_low_items(self, request, queryset):
         """Mark low stock items for restock."""
-        low_stock = queryset.filter(stock_qty__lt=10)
+        low_stock = queryset.filter(stock_qty__lt=LOW_STOCK_THRESHOLD)
         self.message_user(
             request,
             f"⚠ Found {low_stock.count()} item(s) with low stock. Please restock soon!",

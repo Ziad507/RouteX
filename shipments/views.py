@@ -8,6 +8,9 @@ from django.utils.dateparse import parse_datetime
 from rest_framework import serializers as drf_serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from .permissions import IsWarehouseManager, IsDriver
 from .models import Shipment, StatusUpdate, WarehouseManager, Customer, Warehouse, Driver, Product
@@ -15,6 +18,8 @@ from .serializers import (
     StatusUpdateSerializer, ShipmentSerializer,
     CustomerSerializer, WarehouseSerializer, DriverStatusSerializer, ProductSerializer
 )
+from .constants import SHIPMENT_LIST_LIMIT, AUTOCOMPLETE_LIMIT, ACTIVE_STATUSES
+from .mixins import WarehouseManagerQuerysetMixin
 
 
 # 1) product list/create (warehouse manager only)
@@ -24,6 +29,26 @@ class ProductListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsWarehouseManager]
     queryset = Product.objects.all().annotate(shipments_count=Count('shipments'))
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    def list(self, request, *args, **kwargs):
+        """List products with caching."""
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        """Create product and invalidate cache."""
+        response = super().create(request, *args, **kwargs)
+        # Invalidate product list cache
+        try:
+            # Try to delete cache keys (may fail if cache doesn't support keys())
+            if hasattr(cache, 'keys'):
+                keys = cache.keys("products_list_*")
+                if keys:
+                    cache.delete_many(keys)
+        except (AttributeError, NotImplementedError):
+            pass
+        cache.delete("products_list")
+        return response
 
 
 # 2) product detail/update/delete (warehouse manager only)
@@ -59,56 +84,58 @@ class ShipmentCreateView(generics.CreateAPIView):
 
 # 4) detail/update/delete shipment (warehouse manager only)
 @extend_schema(tags=["Shipments"])
-class ShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+class ShipmentDetailView(WarehouseManagerQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Shipment.objects.select_related("product", "warehouse", "driver__user", "customer")
     serializer_class = ShipmentSerializer
     permission_classes = [IsWarehouseManager]
 
-    def get_queryset(self):
-        return (
-            self.queryset
-            if WarehouseManager.objects.filter(user=self.request.user).exists()
-            else Shipment.objects.none()
-        )
-
     @transaction.atomic
     def perform_destroy(self, instance: Shipment):
+        # Release stock when deleting a shipment with assigned driver and product
         if instance.driver_id and instance.product_id:
+            quantity = getattr(instance, "quantity", 1)
             Product.objects.filter(pk=instance.product_id).update(
-                stock_qty=F("stock_qty") + 1
+                stock_qty=F("stock_qty") + quantity
             )
+        
+        # Invalidate caches
+        cache.delete("products_list")
+        if instance.product_id:
+            cache.delete(f"product_{instance.product_id}")
+        cache.delete("drivers_list")
+        if instance.driver_id:
+            try:
+                driver = Driver.objects.get(pk=instance.driver_id)
+                cache.delete(f"driver_status_{driver.user.id}")
+            except Driver.DoesNotExist:
+                pass
+        
         super().perform_destroy(instance)
 
 
 # 5) shipments list (warehouse manager only)
 @extend_schema(tags=["Shipments"])
-class ShipmentsListView(generics.ListAPIView):
+class ShipmentsListView(WarehouseManagerQuerysetMixin, generics.ListAPIView):
     permission_classes = [IsWarehouseManager]
     serializer_class = ShipmentSerializer
 
     def get_queryset(self):
-        if not WarehouseManager.objects.filter(user=self.request.user).exists():
-            return Shipment.objects.none()
-
         qs = Shipment.objects.select_related("product", "warehouse", "driver__user", "customer")
         updated_since = self.request.query_params.get("updated_since")
         if updated_since:
             dt = parse_datetime(updated_since)
             if dt:
                 qs = qs.filter(updated_at__gte=dt)
-        return qs.order_by("-updated_at")[:500]
+        return qs.order_by("-updated_at")[:SHIPMENT_LIST_LIMIT]
 
 
 # 6) Autocomplete shipments (warehouse manager only)
 @extend_schema(tags=["Autocomplete"])
-class AutocompleteShipmentsView(generics.ListAPIView):
+class AutocompleteShipmentsView(WarehouseManagerQuerysetMixin, generics.ListAPIView):
     serializer_class = ShipmentSerializer
     permission_classes = [IsWarehouseManager]
 
     def get_queryset(self):
-        if not WarehouseManager.objects.filter(user=self.request.user).exists():
-            return Shipment.objects.none()
-
         q = (self.request.query_params.get("q") or "").strip()
         qs = Shipment.objects.select_related("product", "customer", "driver__user", "warehouse")
         if q:
@@ -119,7 +146,7 @@ class AutocompleteShipmentsView(generics.ListAPIView):
                     Q(product__name__icontains=q) |  # Search by product name
                     Q(notes__icontains=q)
                 )
-        return qs.order_by("-updated_at")[:20]
+        return qs.order_by("-updated_at")[:AUTOCOMPLETE_LIMIT]
 
 
 # 7) warehouse create (warehouse manager only)
@@ -132,17 +159,10 @@ class WarehouseListCreateView(generics.ListCreateAPIView):
 
 # 8) detail/update/delete warehouse (warehouse manager only)
 @extend_schema(tags=["Warehouses"])
-class WarehouseDetailView(generics.RetrieveUpdateDestroyAPIView):
+class WarehouseDetailView(WarehouseManagerQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = WarehouseSerializer
     permission_classes = [IsWarehouseManager]
     queryset = Warehouse.objects.all()
-
-    def get_queryset(self):
-        try:
-            WarehouseManager.objects.get(user=self.request.user)
-        except WarehouseManager.DoesNotExist:
-            return Warehouse.objects.none()
-        return self.queryset
 
 
 # 9) customer create (warehouse manager only)
@@ -200,7 +220,7 @@ class CustomerAddressesView(generics.RetrieveAPIView):
 
 # 12) Autocomplete customers (warehouse manager only)
 @extend_schema(tags=["Autocomplete"])
-class AutocompleteCustomersView(generics.ListAPIView):
+class AutocompleteCustomersView(WarehouseManagerQuerysetMixin, generics.ListAPIView):
     """
     Query parameter: q
     - q isdigit => match ID/phone
@@ -211,9 +231,6 @@ class AutocompleteCustomersView(generics.ListAPIView):
 
     def get_queryset(self):
         q = (self.request.query_params.get("q") or "").strip()
-
-        if not WarehouseManager.objects.filter(user=self.request.user).exists():
-            return Customer.objects.none()
 
         qs = Customer.objects.all()
 
@@ -226,7 +243,7 @@ class AutocompleteCustomersView(generics.ListAPIView):
                     Q(phone__icontains=q)
                 )
 
-        return qs.order_by("-updated_at")[:20]
+        return qs.order_by("-updated_at")[:AUTOCOMPLETE_LIMIT]
 
     def get_serializer(self, *args, **kwargs):
         serializer = super().get_serializer(*args, **kwargs)
@@ -253,6 +270,11 @@ class DriverStatusView(viewsets.ReadOnlyModelViewSet):
     # filter_backends   = [filters.SearchFilter]
     search_fields = ["user__username", "user__phone"]
 
+    @method_decorator(cache_page(60 * 2))  # Cache for 2 minutes (driver status changes frequently)
+    def list(self, request, *args, **kwargs):
+        """List drivers with caching."""
+        return super().list(request, *args, **kwargs)
+    
     def get_queryset(self):
         latest_update_qs = (
             StatusUpdate.objects
@@ -260,7 +282,6 @@ class DriverStatusView(viewsets.ReadOnlyModelViewSet):
             .order_by("-timestamp")
         )
 
-        ACTIVE_STATUSES = ["ASSIGNED", "IN_TRANSIT"]
         active_shipment_qs = (
             Shipment.objects
             .filter(driver=OuterRef("pk"))
@@ -335,11 +356,13 @@ class DriverDetailManagerView(APIView):
             return Response({"detail": "Driver not found."}, status=status.HTTP_404_NOT_FOUND)
 
         status_text = "available" if driver.is_active else "busy"
+        from users.utils import mask_phone
+        
         return Response({
             "id": driver.id,
             "user_id": driver.user.id,
             "username": driver.user.username,
-            "phone": driver.user.phone,
+            "phone": mask_phone(driver.user.phone),  # Masked for privacy
             "is_active": driver.is_active,
             "status": status_text,
         })

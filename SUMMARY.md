@@ -14,6 +14,7 @@
 ## 🏗️ البنية التقنية
 
 ### **التقنيات المستخدمة:**
+
 ```
 Backend:     Django 5.2.6 + Django REST Framework
 Database:    PostgreSQL / SQLite (للتطوير)
@@ -26,6 +27,7 @@ Deployment:  PythonAnywhere
 ```
 
 ### **الأمان:**
+
 ```
 ✅ JWT Authentication (Access: 12h, Refresh: 7 days)
 ✅ Role-Based Access Control (IsDriver, IsWarehouseManager)
@@ -41,6 +43,7 @@ Deployment:  PythonAnywhere
 ## 📦 الموديلز (Models)
 
 ### **1. CustomUser** (users app)
+
 ```python
 Fields:
 - username: CharField (unique)
@@ -52,6 +55,7 @@ Relations:
 ```
 
 ### **2. Driver** (shipments app)
+
 ```python
 Fields:
 - user: OneToOne → CustomUser
@@ -61,12 +65,14 @@ Relations:
 ```
 
 ### **3. WarehouseManager** (shipments app)
+
 ```python
 Fields:
 - user: OneToOne → CustomUser
 ```
 
 ### **4. Product** (shipments app)
+
 ```python
 Fields:
 - name, price, unit, stock_qty, image, is_active
@@ -75,6 +81,7 @@ Relations:
 ```
 
 ### **5. Warehouse** (shipments app)
+
 ```python
 Fields:
 - name, location
@@ -83,6 +90,7 @@ Relations:
 ```
 
 ### **6. Customer** (shipments app)
+
 ```python
 Fields:
 - name, phone, address, address2, address3
@@ -91,6 +99,7 @@ Relations:
 ```
 
 ### **7. Shipment** (shipments app)
+
 ```python
 Fields:
 - product, warehouse, driver, customer, customer_address
@@ -101,6 +110,7 @@ Relations:
 ```
 
 ### **8. StatusUpdate** (shipments app)
+
 ```python
 Fields:
 - shipment, status, timestamp, note, photo
@@ -114,6 +124,7 @@ Relations:
 ## 🔌 API Endpoints
 
 ### **Authentication (Public):**
+
 ```
 POST   /api/v1/auth/signup/       - تسجيل مستخدم جديد (Driver)
 POST   /api/v1/auth/login/        - تسجيل دخول + JWT tokens
@@ -122,6 +133,7 @@ GET    /api/v1/auth/whoami/       - معلومات المستخدم + دوره
 ```
 
 ### **Driver Endpoints (IsDriver):**
+
 ```
 GET    /api/v1/driver/shipments/  - الشحنات المعينة
 POST   /api/v1/status-updates/    - تحديث حالة شحنة
@@ -130,6 +142,7 @@ PATCH  /api/v1/driver/status/     - تحديث حالة السائق
 ```
 
 ### **Manager Endpoints (IsWarehouseManager):**
+
 ```
 Products:
   GET/POST     /api/v1/products/
@@ -159,6 +172,7 @@ Autocomplete:
 ```
 
 ### **Pagination:**
+
 ```
 Default: 10 items per page
 Query params: ?limit=20&offset=10
@@ -169,6 +183,7 @@ Query params: ?limit=20&offset=10
 ## 🎨 Admin Panel - المميزات
 
 ### **التصميم:**
+
 ```css
 Theme: Modern Dark with Gradient Background
 Colors: Dark Blue (#0f172a) → Sky Blue (#0ea5e9)
@@ -179,6 +194,7 @@ Style: Professional + Clean + Responsive
 ### **المميزات الرئيسية:**
 
 #### **1. Users Admin**
+
 - ✅ Inline forms لإدارة الأدوار (Driver/Manager)
 - ✅ Badges ملونة للأدوار والحالات
 - ✅ عداد الشحنات لكل سائق
@@ -188,27 +204,32 @@ Style: Professional + Clean + Responsive
 - ✅ Advanced search (username, phone, email)
 
 #### **2. Driver Admin**
+
 - ✅ Status badges (Available=Green, Busy=Red)
 - ✅ Shipment counter (Total + Active)
 - ✅ Bulk toggle availability
 - ✅ Form validation لمنع التعارض
 
 #### **3. Product Admin**
+
 - ✅ Price display مع تنسيق (SAR)
 - ✅ Stock badges (In Stock / Low Stock / Out of Stock)
 - ✅ Image preview (40x40)
 - ✅ Bulk actions (Activate/Deactivate/Low Stock Alert)
 
 #### **4. Warehouse Admin**
+
 - ✅ Shipment counter لكل مستودع
 - ✅ Quick link لعرض الشحنات
 
 #### **5. Customer Admin**
+
 - ✅ Address counter (1-3 addresses)
 - ✅ Warning للعملاء بدون عناوين
 - ✅ Shipment counter
 
 #### **6. Shipment Admin** ⭐
+
 - ✅ **Smart address selection** (dropdown من عناوين العميل فقط)
 - ✅ **Form validation** للعناوين
 - ✅ Status badges ملونة
@@ -219,6 +240,7 @@ Style: Professional + Clean + Responsive
 - ✅ Quick link لـ status updates
 
 #### **7. StatusUpdate Admin**
+
 - ✅ Timeline view للتحديثات
 - ✅ GPS location مع رابط Google Maps
 - ✅ Status badges
@@ -230,6 +252,7 @@ Style: Professional + Clean + Responsive
 ## 🔄 سير العمل (Workflow)
 
 ### **المدير (Warehouse Manager):**
+
 ```
 1. إنشاء منتجات → Products
 2. إنشاء مستودعات → Warehouses
@@ -246,6 +269,7 @@ Style: Professional + Clean + Responsive
 ```
 
 ### **السائق (Driver):**
+
 ```
 1. تسجيل الدخول → POST /api/v1/auth/login/
 2. عرض الشحنات المعينة → GET /api/v1/driver/shipments/
@@ -263,6 +287,7 @@ Style: Professional + Clean + Responsive
 ## 🧪 الاختبارات
 
 ### **Test Coverage:**
+
 ```
 Total: >80%
 Files:
@@ -275,6 +300,7 @@ Files:
 ```
 
 ### **CI/CD Pipeline:**
+
 ```
 GitHub Actions:
 1. Linting (Black + isort + Flake8)
@@ -288,6 +314,7 @@ GitHub Actions:
 ## 🚀 النشر
 
 ### **البيئة الحالية:**
+
 ```
 Platform: PythonAnywhere
 URL: https://ziad506.pythonanywhere.com
@@ -297,6 +324,7 @@ Database: SQLite (testing) / PostgreSQL (production)
 ```
 
 ### **الملفات المطلوبة (.env):**
+
 ```env
 DJANGO_SECRET_KEY=<secret>
 DEBUG=False
@@ -315,6 +343,7 @@ CORS_ALLOW_LOCALHOST=True
 ## 📊 الإحصائيات
 
 ### **الكود:**
+
 ```
 Total Lines: ~15,000
 Models: 8 models
@@ -325,6 +354,7 @@ Coverage: >80%
 ```
 
 ### **الملفات الرئيسية:**
+
 ```
 RouteX/settings.py:       496 lines (Database, CORS, Security, Jazzmin)
 users/models.py:           12 lines (CustomUser)
@@ -341,20 +371,25 @@ shipments/admin.py:      1020 lines (Complete admin with CRUD)
 ## ✅ المشاكل المحلولة
 
 ### **1. Database:**
+
 - ✅ PostgreSQL connection → SQLite fallback
 
 ### **2. CORS:**
+
 - ✅ Frontend localhost access → Regex patterns
 
 ### **3. Admin:**
+
 - ✅ AttributeError in `get_actions` → Renamed to `get_quick_actions`
 - ✅ FieldError 'shipment' → Fixed to 'shipments'
 - ✅ ValueError in format_html → Pre-format price
 
 ### **4. Schema:**
+
 - ✅ drf-spectacular errors → inline_serializer
 
 ### **5. Tests:**
+
 - ✅ TypeError for None in POST → TEST_REQUEST_DEFAULT_FORMAT='json'
 - ✅ RuntimeError database access → db fixture
 
@@ -363,6 +398,7 @@ shipments/admin.py:      1020 lines (Complete admin with CRUD)
 ## 🎯 النتيجة النهائية
 
 ### **✅ تم إنجاز:**
+
 1. ✅ API كامل وموثق (25+ endpoints)
 2. ✅ Authentication & Authorization (JWT + Roles)
 3. ✅ Admin Panel احترافي (CRUD كامل)
@@ -375,6 +411,7 @@ shipments/admin.py:      1020 lines (Complete admin with CRUD)
 10. ✅ Documentation (README + API Docs)
 
 ### **📈 الجودة:**
+
 ```
 Code Quality:   ⭐⭐⭐⭐⭐ (5/5)
 Test Coverage:  ⭐⭐⭐⭐☆ (4/5)
@@ -404,6 +441,7 @@ Overall: ⭐⭐⭐⭐⭐ (4.5/5)
 ## 🔮 التطوير المستقبلي
 
 ### **مقترحات:**
+
 - [ ] Real-time notifications (WebSockets/Pusher)
 - [ ] Mobile App (React Native/Flutter)
 - [ ] Route optimization (Google Maps API)
@@ -430,13 +468,14 @@ Overall: ⭐⭐⭐⭐⭐ (4.5/5)
 ✅ أمان عالي المستوى  
 ✅ تجربة مستخدم ممتازة  
 ✅ كود نظيف ومختبر  
-✅ جاهز للإنتاج  
+✅ جاهز للإنتاج
 
 ---
 
 ## 📞 الدعم والمساعدة
 
 ### **الروابط المهمة:**
+
 - **GitHub:** https://github.com/FatimaaAlzahraa/RouteX
 - **Production:** https://ziad506.pythonanywhere.com
 - **Admin:** https://ziad506.pythonanywhere.com/api/admin/
@@ -444,6 +483,7 @@ Overall: ⭐⭐⭐⭐⭐ (4.5/5)
 - **SwaggerHub:** https://app.swaggerhub.com/hub/routex
 
 ### **الفريق:**
+
 - **المطورين:** Origami Techs Team
 - **التاريخ:** نوفمبر 2025
 - **الإصدار:** v1.0.0
@@ -453,4 +493,3 @@ Overall: ⭐⭐⭐⭐⭐ (4.5/5)
 **تم بحمد الله! 🎉**
 
 المشروع جاهز بنسبة 100% للإنتاج والاستخدام الفعلي.
-

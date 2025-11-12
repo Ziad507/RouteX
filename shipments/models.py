@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from django.core.validators import RegexValidator
 
 
 
@@ -62,8 +63,18 @@ class Warehouse(models.Model):
 
 
 class Customer(models.Model):
+    # Saudi phone number validator (supports +966XXXXXXXXX format)
+    saudi_phone_validator = RegexValidator(
+        regex=r'^\+?966\d{9}$',
+        message="Phone number must be a valid Saudi number starting with +966 or 966 followed by 9 digits."
+    )
+    
     name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=20)
+    phone = models.CharField(
+        max_length=20,
+        validators=[saudi_phone_validator],
+        help_text="Saudi phone number (e.g., +966512345678 or 966512345678)"
+    )
     address = models.CharField(max_length=255, blank=True)
     address2 = models.CharField(max_length=255, blank=True)
     address3 = models.CharField(max_length=255, blank=True)
@@ -90,6 +101,43 @@ class ShipmentStatus(models.TextChoices):
     DELIVERED = "DELIVERED", "Delivered"
 
 
+# Status transition rules - defines allowed state changes
+ALLOWED_STATUS_TRANSITIONS = {
+    ShipmentStatus.NEW: [ShipmentStatus.ASSIGNED],
+    ShipmentStatus.ASSIGNED: [ShipmentStatus.IN_TRANSIT, ShipmentStatus.NEW],  # Can reassign
+    ShipmentStatus.IN_TRANSIT: [ShipmentStatus.DELIVERED, ShipmentStatus.ASSIGNED],  # Can go back if needed
+    ShipmentStatus.DELIVERED: [],  # Final state - no transitions allowed
+}
+
+
+def validate_status_transition(old_status: str, new_status: str) -> bool:
+    """
+    Validate if a status transition is allowed.
+    
+    Args:
+        old_status: Current shipment status
+        new_status: Desired new status
+        
+    Returns:
+        True if transition is allowed, False otherwise
+        
+    Raises:
+        ValueError: If transition is not allowed
+    """
+    old_status = ShipmentStatus(old_status) if isinstance(old_status, str) else old_status
+    new_status = ShipmentStatus(new_status) if isinstance(new_status, str) else new_status
+    
+    allowed = ALLOWED_STATUS_TRANSITIONS.get(old_status, [])
+    
+    if new_status not in allowed:
+        raise ValueError(
+            f"Invalid status transition: Cannot change from '{old_status.label}' "
+            f"to '{new_status.label}'. Allowed transitions: {[s.label for s in allowed]}"
+        )
+    
+    return True
+
+
 class Shipment(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.PROTECT, related_name="shipments", null=True, blank=True
@@ -104,6 +152,7 @@ class Shipment(models.Model):
         Customer, on_delete=models.PROTECT, related_name="shipments", null=True, blank=True
     )
     customer_address = models.CharField(max_length=255, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1, help_text="Number of product units in this shipment")
     notes = models.TextField(blank=True, null=True,default="")
     assigned_at = models.DateTimeField(default=timezone.now)
     current_status = models.CharField(max_length=20, default=ShipmentStatus.NEW, choices=ShipmentStatus.choices, db_index=True, editable=False)

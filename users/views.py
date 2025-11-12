@@ -8,8 +8,11 @@ This module handles:
 - User profile information retrieval
 """
 
+from typing import Dict, Any, Optional
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.views import APIView
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
@@ -38,20 +41,10 @@ class TokenRefreshView(BaseTokenRefreshView):
     pass
 
 
-def normalize_phone(phone: str) -> str:
-    """
-    Normalize phone number by extracting only digits.
-    
-    Args:
-        phone: Raw phone number string
-        
-    Returns:
-        String containing only digits from the input
-    """
-    return ''.join(ch for ch in (phone or '') if ch.isdigit())
+from .utils import normalize_phone, mask_phone
 
 
-def detect_user_role(user) -> str:
+def detect_user_role(user: get_user_model()) -> str:
     """
     Detect user role based on profile associations.
     
@@ -186,7 +179,7 @@ class LoginView(APIView):
             'user': {
                 'id': user.id,
                 'username': user.username,
-                'phone': user.phone,
+                'phone': mask_phone(user.phone),  # Masked for privacy
             }
         }, status=status.HTTP_200_OK)
 
@@ -212,7 +205,7 @@ class LoginView(APIView):
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def whois(request):
+def whois(request: Request) -> Response:
     """
     Return authenticated user information and role.
     
@@ -233,7 +226,7 @@ def whois(request):
     return Response({
         'id': user.id,
         'username': user.username,
-        'phone': user.phone,
+        'phone': mask_phone(user.phone),  # Masked for privacy
         'role': role,
     }, status=status.HTTP_200_OK)
 
@@ -329,11 +322,17 @@ class SignupView(APIView):
                 Driver.objects.create(user=user, is_active=True)
         except IntegrityError as exc:
             logger.exception("Signup failed due to integrity error", exc_info=exc)
-            raise ValidationError({"detail": "User could not be created. Please try a different name or phone."})
+            # Generic error message to avoid information disclosure
+            error_msg = "User could not be created. The username or phone number may already be in use."
+            raise ValidationError({"detail": error_msg})
+        except ValidationError:
+            # Re-raise validation errors as-is (they already have proper messages)
+            raise
         except Exception as exc:
             logger.exception("Unexpected error during signup", exc_info=exc)
+            # Generic error message - don't expose internal error details
             return Response(
-                {"detail": "Unexpected error occurred during signup. Please try again later."},
+                {"detail": "An error occurred while creating your account. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -348,7 +347,7 @@ class SignupView(APIView):
             "user": {
                 "id": user.id,
                 "username": user.username,
-                "phone": user.phone,
+                "phone": mask_phone(user.phone),  # Masked for privacy
             }
         }, status=status.HTTP_201_CREATED)
 
@@ -429,14 +428,21 @@ class DriverStatusUpdateView(APIView):
     """
     permission_classes = [IsDriver]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         """قراءة حالة السائق الحالية."""
         try:
             driver = Driver.objects.get(user=request.user)
         except Driver.DoesNotExist:
+            logger.warning(f"Driver profile not found for user {request.user.id}")
             return Response(
-                {"detail": "Driver profile not found."},
+                {"detail": "Driver profile not found. Please contact support if you believe this is an error."},
                 status=status.HTTP_403_FORBIDDEN
+            )
+        except Exception as exc:
+            logger.exception(f"Unexpected error retrieving driver status for user {request.user.id}", exc_info=exc)
+            return Response(
+                {"detail": "An error occurred while retrieving your status. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         status_text = "متاح" if driver.is_active else "مشغول"
@@ -444,19 +450,26 @@ class DriverStatusUpdateView(APIView):
         return Response({
             "id": driver.user.id,
             "username": driver.user.username,
-            "phone": driver.user.phone,
+            "phone": mask_phone(driver.user.phone),  # Masked for privacy
             "is_active": driver.is_active,
             "status": status_text,
         }, status=status.HTTP_200_OK)
 
-    def patch(self, request):
+    def patch(self, request: Request) -> Response:
         """تحديث حالة السائق (is_active)."""
         try:
             driver = Driver.objects.get(user=request.user)
         except Driver.DoesNotExist:
+            logger.warning(f"Driver profile not found for user {request.user.id}")
             return Response(
-                {"detail": "Driver profile not found."},
+                {"detail": "Driver profile not found. Please contact support if you believe this is an error."},
                 status=status.HTTP_403_FORBIDDEN
+            )
+        except Exception as exc:
+            logger.exception(f"Unexpected error retrieving driver for user {request.user.id}", exc_info=exc)
+            return Response(
+                {"detail": "An error occurred while processing your request. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         is_active = request.data.get("is_active")
@@ -476,6 +489,20 @@ class DriverStatusUpdateView(APIView):
         # تحديث الحالة
         driver.is_active = is_active
         driver.save(update_fields=["is_active"])
+        
+        # Invalidate driver status cache
+        cache_key = f"driver_status_{driver.user.id}"
+        cache.delete(cache_key)
+        # Also invalidate drivers list cache
+        try:
+            # Try to delete cache keys (may fail if cache doesn't support keys())
+            if hasattr(cache, 'keys'):
+                keys = cache.keys("drivers_list_*")
+                if keys:
+                    cache.delete_many(keys)
+        except (AttributeError, NotImplementedError):
+            pass
+        cache.delete("drivers_list")
 
         # تحديد حالة نصية للعرض
         status_text = "متاح" if is_active else "مشغول"
@@ -485,7 +512,7 @@ class DriverStatusUpdateView(APIView):
         return Response({
             "id": driver.user.id,
             "username": driver.user.username,
-            "phone": driver.user.phone,
+            "phone": mask_phone(driver.user.phone),  # Masked for privacy
             "is_active": driver.is_active,
             "status": status_text,
         }, status=status.HTTP_200_OK)

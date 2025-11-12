@@ -221,9 +221,20 @@ USE_TZ = True
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Reduced token lifetimes for better security
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),  # Reduced to 12h 
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),  # Reduced from 7d to 30d
+    
+    # Token rotation for enhanced security
+    "ROTATE_REFRESH_TOKENS": True,  # Generate new refresh token on each use
+    "BLACKLIST_AFTER_ROTATION": True,  # Blacklist old refresh tokens
+    
+    # Authentication header
     "AUTH_HEADER_TYPES": ("Bearer",),
+    
+    # Additional security settings
+    "UPDATE_LAST_LOGIN": True,  # Update last_login on token refresh
+    "ALGORITHM": "HS256",  # Use HS256 algorithm
 }
 
 
@@ -234,6 +245,41 @@ SIMPLE_JWT = {
 
 # Use SQLite for development if PostgreSQL is not available
 USE_SQLITE = env.bool("USE_SQLITE", default=False)
+
+# ============================================================================
+# CACHING CONFIGURATION - Redis for performance
+# ============================================================================
+
+# Redis cache configuration
+# Falls back to local memory cache if Redis is not available
+REDIS_URL = env.str("REDIS_URL", default="redis://127.0.0.1:6379/1")
+USE_REDIS = env.bool("USE_REDIS", default=False)
+
+if USE_REDIS:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "SOCKET_CONNECT_TIMEOUT": 5,  # 5 seconds
+                "SOCKET_TIMEOUT": 5,
+                "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+                "IGNORE_EXCEPTIONS": True,  # Don't crash if Redis is down
+            },
+            "KEY_PREFIX": "routex",
+            "TIMEOUT": 300,  # 5 minutes default timeout
+        }
+    }
+else:
+    # Fallback to local memory cache for development
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+            "TIMEOUT": 300,  # 5 minutes
+        }
+    }
 
 if USE_SQLITE or not os.getenv("DB_NAME"):
     # SQLite configuration (easier for local development)
