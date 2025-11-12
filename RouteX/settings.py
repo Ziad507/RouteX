@@ -61,38 +61,116 @@ INSTALLED_APPS = [
 ]
 
 JAZZMIN_SETTINGS = {
-    "site_title": "RouteX Admin",
-    "site_header": "RouteX Control Center",
+    # Site branding
+    "site_title": "RouteX Control Panel",
+    "site_header": "🚚 RouteX - Logistics Management System",
     "site_brand": "RouteX",
-    "welcome_sign": "Welcome to RouteX Operations Portal",
+    "welcome_sign": "Welcome to RouteX Control Center",
+    "copyright": "RouteX © 2025",
+    
+    # Custom CSS
     "custom_css": "users/css/admin.css",
-    "site_logo_classes": "img-circle",
+    "custom_js": None,
+    
+    # Logo
+    "site_logo": None,
+    "site_logo_classes": "img-circle elevation-3",
+    "site_icon": None,
+    
+    # Top menu links
     "topmenu_links": [
-        {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"app": "users"},
-        {"app": "shipments"},
-        {"name": "API Docs", "url": "/api/docs/", "new_window": True},
+        {"name": "🏠 Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "📊 Reports", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "📖 API Docs", "url": "/api/docs/", "new_window": True},
+        {"name": "💻 Swagger UI", "url": "/api/docs/swagger-ui/", "new_window": True},
     ],
+    
+    # User menu links
     "usermenu_links": [
-        {"name": "Visit Site", "url": "/", "new_window": True},
-        {"name": "Swagger UI", "url": "/api/docs/", "new_window": True},
+        {"name": "🌐 Visit Site", "url": "/", "new_window": True},
+        {"name": "📚 API Documentation", "url": "/api/docs/", "new_window": True},
+        {"model": "users.CustomUser"},
     ],
-    "show_ui_builder": False,
+    
+    # Side menu customization
+    "show_sidebar": True,
     "navigation_expanded": True,
-    "hide_models": [
-        "auth.Group",
-        "auth.Permission",
+    "hide_apps": [],
+    "hide_models": [],
+    
+    # Order of apps and models
+    "order_with_respect_to": [
+        "users",
+        "users.CustomUser",
+        "shipments",
+        "shipments.Driver",
+        "shipments.WarehouseManager",
+        "shipments.Shipment",
+        "shipments.Product",
+        "shipments.Warehouse",
+        "shipments.Customer",
+        "shipments.StatusUpdate",
     ],
+    
+    # Custom app and model names
+    "custom_links": {
+        "users": [{
+            "name": "Quick Add User",
+            "url": "admin:users_customuser_add",
+            "icon": "fas fa-user-plus",
+            "permissions": ["users.add_customuser"]
+        }],
+        "shipments": [
+            {
+                "name": "Create Shipment",
+                "url": "admin:shipments_shipment_add",
+                "icon": "fas fa-shipping-fast",
+                "permissions": ["shipments.add_shipment"]
+            },
+            {
+                "name": "Add Product",
+                "url": "admin:shipments_product_add",
+                "icon": "fas fa-box-open",
+                "permissions": ["shipments.add_product"]
+            },
+        ],
+    },
+    
+    # Icons configuration
     "icons": {
-        "auth": "fas fa-users-cog",
+        "auth": "fas fa-shield-alt",
+        "auth.Group": "fas fa-users",
+        "users": "fas fa-user-circle",
         "users.CustomUser": "fas fa-user",
+        "shipments": "fas fa-truck-loading",
         "shipments.Driver": "fas fa-truck",
-        "shipments.Shipment": "fas fa-boxes",
+        "shipments.WarehouseManager": "fas fa-user-tie",
+        "shipments.Shipment": "fas fa-box",
         "shipments.Product": "fas fa-box-open",
         "shipments.Warehouse": "fas fa-warehouse",
-        "shipments.Customer": "fas fa-user-friends",
+        "shipments.Customer": "fas fa-users",
         "shipments.StatusUpdate": "fas fa-stream",
     },
+    
+    # Default icon for models
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    
+    # Related modal
+    "related_modal_active": False,
+    
+    # UI Tweaks
+    "show_ui_builder": False,
+    
+    # Change view
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "users.CustomUser": "horizontal_tabs",
+        "shipments.Shipment": "horizontal_tabs",
+    },
+    
+    # Language chooser
+    "language_chooser": False,
 }
 
 JAZZMIN_UI_TWEAKS = {
