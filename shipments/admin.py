@@ -53,7 +53,7 @@ class DriverAdmin(admin.ModelAdmin):
         "get_driver_phone",
         "get_status_badge",
         "get_shipments_info",
-        "get_actions",
+        "get_quick_actions",
     )
     
     list_display_links = ("id", "get_driver_name")
@@ -143,7 +143,7 @@ class DriverAdmin(admin.ModelAdmin):
     get_shipments_info.short_description = "📦 Shipments"
     get_shipments_info.admin_order_field = "total_shipments"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick action links."""
         actions = []
         
@@ -169,7 +169,7 @@ class DriverAdmin(admin.ModelAdmin):
         
         return mark_safe(" ".join(actions))
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
     
     actions = ["toggle_active_status", "make_available", "make_busy"]
     
@@ -231,7 +231,7 @@ class WarehouseManagerAdmin(admin.ModelAdmin):
     form = WarehouseManagerAdminForm
     autocomplete_fields = ["user"]
     
-    list_display = ("id", "get_manager_name", "get_manager_phone", "get_role_badge", "get_actions")
+    list_display = ("id", "get_manager_name", "get_manager_phone", "get_role_badge", "get_quick_actions")
     list_display_links = ("id", "get_manager_name")
     search_fields = ("user__username", "user__phone", "user__first_name", "user__last_name")
     list_per_page = 25
@@ -267,7 +267,7 @@ class WarehouseManagerAdmin(admin.ModelAdmin):
     
     get_role_badge.short_description = "Role"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick action links."""
         edit_url = reverse('admin:shipments_warehousemanager_change', args=[obj.pk])
         return format_html(
@@ -276,7 +276,7 @@ class WarehouseManagerAdmin(admin.ModelAdmin):
             edit_url
         )
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
 
 
 # ============================================================================
@@ -298,7 +298,7 @@ class ProductAdmin(admin.ModelAdmin):
         "get_status_badge",
         "get_image_preview",
         "created_at",
-        "get_actions",
+        "get_quick_actions",
     )
     
     list_display_links = ("id", "get_product_name")
@@ -400,7 +400,7 @@ class ProductAdmin(admin.ModelAdmin):
     
     get_image_preview.short_description = "🖼 Image"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick actions."""
         edit_url = reverse('admin:shipments_product_change', args=[obj.pk])
         shipments_url = reverse('admin:shipments_shipment_changelist') + f'?product__id__exact={obj.id}'
@@ -413,7 +413,7 @@ class ProductAdmin(admin.ModelAdmin):
             edit_url, shipments_url
         )
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
     
     actions = ["activate_products", "deactivate_products", "restock_low_items"]
     
@@ -451,7 +451,7 @@ class ProductAdmin(admin.ModelAdmin):
 class WarehouseAdmin(admin.ModelAdmin):
     """Warehouse location management."""
     
-    list_display = ("get_warehouse_name", "location", "get_shipment_count", "created_at", "get_actions")
+    list_display = ("get_warehouse_name", "location", "get_shipment_count", "created_at", "get_quick_actions")
     list_display_links = ("get_warehouse_name",)
     list_filter = ("location", "created_at")
     search_fields = ("name", "location")
@@ -493,7 +493,7 @@ class WarehouseAdmin(admin.ModelAdmin):
     get_shipment_count.short_description = "📦 Shipments"
     get_shipment_count.admin_order_field = "shipment_count"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick actions."""
         edit_url = reverse('admin:shipments_warehouse_change', args=[obj.pk])
         shipments_url = reverse('admin:shipments_shipment_changelist') + f'?warehouse__id__exact={obj.id}'
@@ -506,7 +506,7 @@ class WarehouseAdmin(admin.ModelAdmin):
             edit_url, shipments_url
         )
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
 
 
 # ============================================================================
@@ -522,7 +522,7 @@ class CustomerAdmin(admin.ModelAdmin):
         "get_phone_display",
         "get_address_count",
         "get_shipment_count",
-        "get_actions",
+        "get_quick_actions",
     )
     
     list_display_links = ("get_customer_name",)
@@ -591,7 +591,7 @@ class CustomerAdmin(admin.ModelAdmin):
     get_shipment_count.short_description = "📦 Shipments"
     get_shipment_count.admin_order_field = "shipment_count"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick actions."""
         edit_url = reverse('admin:shipments_customer_change', args=[obj.pk])
         shipments_url = reverse('admin:shipments_shipment_changelist') + f'?customer__id__exact={obj.id}'
@@ -604,7 +604,7 @@ class CustomerAdmin(admin.ModelAdmin):
             edit_url, shipments_url
         )
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
 
 
 # ============================================================================
@@ -719,7 +719,7 @@ class ShipmentAdmin(admin.ModelAdmin):
         "get_warehouse_name",
         "get_status_badge",
         "get_created_date",
-        "get_actions",
+        "get_quick_actions",
     )
     
     list_display_links = ("id",)
@@ -847,7 +847,7 @@ class ShipmentAdmin(admin.ModelAdmin):
     get_created_date.short_description = "Created"
     get_created_date.admin_order_field = "created_at"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick action links."""
         edit_url = reverse('admin:shipments_shipment_change', args=[obj.pk])
         status_url = reverse('admin:shipments_statusupdate_changelist') + f'?shipment__id__exact={obj.id}'
@@ -860,7 +860,7 @@ class ShipmentAdmin(admin.ModelAdmin):
             edit_url, status_url
         )
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
     
     actions = ["assign_to_driver", "mark_as_delivered", "cancel_shipments"]
     
@@ -918,7 +918,7 @@ class StatusUpdateAdmin(admin.ModelAdmin):
         "get_status_badge",
         "get_timestamp",
         "get_location_info",
-        "get_actions",
+        "get_quick_actions",
     )
     
     list_display_links = ("get_shipment_id",)
@@ -1003,7 +1003,7 @@ class StatusUpdateAdmin(admin.ModelAdmin):
     
     get_location_info.short_description = "Location"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick actions."""
         edit_url = reverse('admin:shipments_statusupdate_change', args=[obj.pk])
         shipment_url = reverse('admin:shipments_shipment_change', args=[obj.shipment.id])
@@ -1016,4 +1016,4 @@ class StatusUpdateAdmin(admin.ModelAdmin):
             edit_url, shipment_url
         )
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"

@@ -115,7 +115,7 @@ class CustomUserAdmin(UserAdmin):
         "is_staff",
         "get_shipments_count",
         "date_joined",
-        "get_actions",
+        "get_quick_actions",
     )
     
     list_display_links = ("username",)
@@ -226,7 +226,7 @@ class CustomUserAdmin(UserAdmin):
     get_shipments_count.short_description = "📦 Shipments"
     get_shipments_count.admin_order_field = "driver_shipments_count"
     
-    def get_actions(self, obj):
+    def get_quick_actions(self, obj):
         """Quick action buttons for each user."""
         actions = []
         
@@ -253,7 +253,7 @@ class CustomUserAdmin(UserAdmin):
         
         return mark_safe(" ".join(actions))
     
-    get_actions.short_description = "⚡ Actions"
+    get_quick_actions.short_description = "⚡ Actions"
     
     # Bulk Actions
     
