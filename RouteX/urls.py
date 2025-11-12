@@ -26,11 +26,11 @@ urlpatterns = [
     # Health check endpoint (for monitoring/load balancers)
     path("api/health/", health_check, name="health-check"),
     
+    # Admin error logs view (must be BEFORE admin panel to avoid being caught by admin.site.urls)
+    path("api/admin/error-logs/", admin_error_logs_view, name="admin_error_logs"),
+    
     # Admin panel
     path("api/admin/", admin.site.urls),
-    
-    # Admin error logs view
-    path("api/admin/error-logs/", admin_error_logs_view, name="admin_error_logs"),
 
     # API schema & docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
