@@ -1,73 +1,80 @@
 """
-Custom throttle classes for role-based rate limiting.
-
-Provides different rate limits for:
-- Warehouse Managers (high limits for bulk operations)
-- Drivers (moderate limits for status updates)
-- General authenticated users
+Custom throttling classes for enhanced API security.
 """
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, ScopedRateThrottle
+from django.core.cache import cache
+from django.utils import timezone
+from datetime import timedelta
 
-from rest_framework.throttling import UserRateThrottle
-from .models import WarehouseManager, Driver
 
-
-class ManagerRateThrottle(UserRateThrottle):
+class IPRateThrottle(AnonRateThrottle):
     """
-    Throttle for warehouse managers with high rate limits.
-    
-    Managers need high limits for:
-    - Bulk shipment creation
-    - Frequent autocomplete queries
-    - Dashboard refreshes
+    Throttle based on IP address for anonymous users.
+    Useful for preventing abuse from specific IPs.
     """
-    rate = '10000/hour'
-    scope = 'manager'
+    scope = 'anon'
     
-    def allow_request(self, request, view):
-        """Only apply throttle to managers."""
-        if not request.user or not request.user.is_authenticated:
-            return True
+    def get_cache_key(self, request, view):
+        """
+        Generate cache key based on IP address.
+        """
+        if request.user.is_authenticated:
+            return None  # Don't throttle authenticated users with IP throttling
         
-        # Check if user is a manager
-        if WarehouseManager.objects.filter(user=request.user).exists():
-            return super().allow_request(request, view)
+        ident = self.get_ident(request)
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': ident
+        }
+
+
+class CustomUserRateThrottle(UserRateThrottle):
+    """
+    Enhanced user rate throttle with better caching.
+    """
+    scope = 'user'
+    
+    def get_cache_key(self, request, view):
+        """
+        Generate cache key based on user ID.
+        """
+        if request.user.is_authenticated:
+            ident = request.user.pk
+        else:
+            ident = self.get_ident(request)
         
-        return True  # Not a manager, skip this throttle
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': ident
+        }
 
 
 class DriverRateThrottle(UserRateThrottle):
     """
-    Throttle for drivers with moderate rate limits.
-    
-    Drivers need moderate limits for:
-    - Status updates with photos
-    - Viewing assigned shipments
-    - GPS location updates
+    Custom throttle for drivers - higher limits for status updates.
     """
-    rate = '5000/hour'
     scope = 'driver'
-    
-    def allow_request(self, request, view):
-        """Only apply throttle to drivers."""
-        if not request.user or not request.user.is_authenticated:
-            return True
-        
-        # Check if user is a driver
-        if Driver.objects.filter(user=request.user).exists():
-            return super().allow_request(request, view)
-        
-        return True  # Not a driver, skip this throttle
 
 
-class BurstRateThrottle(UserRateThrottle):
+class ManagerRateThrottle(UserRateThrottle):
     """
-    Short-term burst protection.
-    
-    Prevents rapid-fire requests that could:
-    - Overload the database
-    - Create duplicate records
-    - Cause race conditions
+    Custom throttle for warehouse managers - highest limits.
     """
-    rate = '60/minute'
-    scope = 'burst'
+    scope = 'manager'
 
+
+class SensitiveEndpointThrottle(UserRateThrottle):
+    """
+    Stricter throttling for sensitive endpoints (login, signup, etc.).
+    """
+    scope = 'sensitive'
+    
+    def get_cache_key(self, request, view):
+        """
+        Use IP address for sensitive endpoints to prevent abuse.
+        """
+        ident = self.get_ident(request)
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': ident
+        }

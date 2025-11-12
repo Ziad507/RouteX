@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import sys
+import logging
 import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +34,43 @@ DEBUG = env.bool("DEBUG", default=False)
 
 if not DEBUG and not SECRET_KEY:
     raise RuntimeError("DJANGO_SECRET_KEY must be set in production.")
+
+
+# ============================================================================
+# SENTRY ERROR TRACKING - Production error monitoring
+# ============================================================================
+
+# Initialize Sentry for error tracking in production
+SENTRY_DSN = env.str("SENTRY_DSN", default="")
+if not DEBUG and SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(
+                transaction_style='url',
+                middleware_spans=True,
+                signals_spans=True,
+            ),
+            LoggingIntegration(
+                level=logging.INFO,        # Capture info and above as breadcrumbs
+                event_level=logging.ERROR  # Send errors as events
+            ),
+        ],
+        # Performance monitoring
+        traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
+        # Release tracking
+        release=env.str("SENTRY_RELEASE", default="routex@1.0.0"),
+        environment=env.str("SENTRY_ENVIRONMENT", default="production"),
+        # Send default PII (Personally Identifiable Information)
+        send_default_pii=True,
+        # Additional options
+        attach_stacktrace=True,
+        max_breadcrumbs=50,
+    )
 
 
 
@@ -83,6 +121,7 @@ JAZZMIN_SETTINGS = {
         {"name": "📊 Reports", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "📖 API Docs", "url": "/api/docs/", "new_window": True},
         {"name": "💻 Swagger UI", "url": "/api/docs/swagger-ui/", "new_window": True},
+        {"name": "⚠️ Error Logs", "url": "/api/admin/error-logs/", "permissions": ["auth.view_user"]},
     ],
     
     # User menu links
@@ -191,6 +230,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware", 
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "RouteX.admin_error_handler.AdminErrorLoggingMiddleware",  # Admin error logging
 ]
 
 ROOT_URLCONF = 'RouteX.urls'
@@ -198,7 +238,7 @@ ROOT_URLCONF = 'RouteX.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -281,6 +321,9 @@ else:
         }
     }
 
+# Database connection pooling configuration
+USE_DB_POOLING = env.bool("USE_DB_POOLING", default=False)
+
 if USE_SQLITE or not os.getenv("DB_NAME"):
     # SQLite configuration (easier for local development)
     DATABASES = {
@@ -291,16 +334,34 @@ if USE_SQLITE or not os.getenv("DB_NAME"):
     }
 else:
     # PostgreSQL configuration (production)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "routex"),
-            "USER": os.getenv("DB_USER", "routex_user"),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-            "PORT": os.getenv("DB_PORT", "5432"),
+    if USE_DB_POOLING:
+        # Use connection pooling for better performance under load
+        DATABASES = {
+            "default": {
+                "ENGINE": "django_db_connection_pool.backends.postgresql",
+                "NAME": os.getenv("DB_NAME", "routex"),
+                "USER": os.getenv("DB_USER", "routex_user"),
+                "PASSWORD": os.getenv("DB_PASSWORD", ""),
+                "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+                "PORT": os.getenv("DB_PORT", "5432"),
+                "OPTIONS": {
+                    "MAX_CONNS": env.int("DB_MAX_CONNS", default=20),
+                    "MIN_CONNS": env.int("DB_MIN_CONNS", default=5),
+                },
+            }
         }
-    }
+    else:
+        # Standard PostgreSQL without pooling
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.getenv("DB_NAME", "routex"),
+                "USER": os.getenv("DB_USER", "routex_user"),
+                "PASSWORD": os.getenv("DB_PASSWORD", ""),
+                "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+                "PORT": os.getenv("DB_PORT", "5432"),
+            }
+        }
 
 
 # Date and time format with 12-hour clock 
@@ -323,16 +384,17 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 10,
     
-    # Throttling - protect API from abuse
+    # Throttling - protect API from abuse with enhanced security
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/hour",      # Anonymous users
-        "user": "2000/hour",     # Authenticated users
-        "driver": "5000/hour",   # Drivers need more for status updates
-        "manager": "10000/hour", # Managers need high limits
+        "anon": "100/hour",           # Anonymous users - strict limit
+        "user": "2000/hour",          # Authenticated users - standard limit
+        "driver": "5000/hour",        # Drivers need more for status updates
+        "manager": "10000/hour",      # Managers need high limits
+        "sensitive": "20/hour",       # Sensitive endpoints (login, signup) - very strict
     },
     
     # Schema generation for API documentation
@@ -540,3 +602,155 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 # Allowed image formats for products and status updates
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB per image
+
+
+# ============================================================================
+# EMAIL CONFIGURATION - For error notifications and admin emails
+# ============================================================================
+
+EMAIL_BACKEND = env.str(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend"
+)
+
+# SMTP settings
+EMAIL_HOST = env.str("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="noreply@routex.com")
+SERVER_EMAIL = env.str("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+
+# Admin email recipients for error notifications
+ADMINS = [
+    ("RouteX Admin", env.str("ADMIN_EMAIL", default="admin@routex.com")),
+]
+
+# Managers (less critical than admins)
+MANAGERS = ADMINS
+
+
+# ============================================================================
+# LOGGING CONFIGURATION - Production-ready error tracking
+# ============================================================================
+
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'detailed': {
+            'format': '{asctime} | {levelname:8s} | {name:15s} | {funcName:20s} | {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'django.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'backupCount': 5,
+            'formatter': 'detailed',
+            'encoding': 'utf-8',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'backupCount': 10,
+            'formatter': 'detailed',
+            'encoding': 'utf-8',
+        },
+        'admin_file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'admin.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'backupCount': 5,
+            'formatter': 'detailed',
+            'encoding': 'utf-8',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'filters': ['require_debug_false'],
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file', 'error_file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['error_file', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console', 'file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['error_file', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'shipments': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'admin': {
+            'handlers': ['console', 'admin_file', 'error_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}

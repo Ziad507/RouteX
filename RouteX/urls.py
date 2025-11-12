@@ -19,10 +19,18 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from .health import health_check
+from .admin_error_handler import admin_error_logs_view
 
 urlpatterns = [
+    # Health check endpoint (for monitoring/load balancers)
+    path("api/health/", health_check, name="health-check"),
+    
     # Admin panel
     path("api/admin/", admin.site.urls),
+    
+    # Admin error logs view
+    path("api/admin/error-logs/", admin_error_logs_view, name="admin_error_logs"),
 
     # API schema & docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
