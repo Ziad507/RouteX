@@ -272,7 +272,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
-    
+
     # Pagination - professional settings for large datasets
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 10,
@@ -378,14 +378,14 @@ ALLOWED_HOSTS = [
     "localhost",
     "zahraaayop.pythonanywhere.com",
     ".pythonanywhere.com",
-    ".ngrok-free.app",
+    ".ngrok-free.app",          
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://zahraaayop.pythonanywhere.com",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
-    "https://*.ngrok-free.app",
+    "https://*.ngrok-free.app",  
 ]
 
 

@@ -143,12 +143,9 @@ class CustomUserAdmin(UserAdmin):
         qs = qs.select_related(
             'driver_profile',
             'warehouse_manager_profile',
-        ).annotate(
-            driver_shipments_count=Count(
-                'driver_profile__shipment',
-                filter=Q(driver_profile__isnull=False)
-            )
         )
+        # Note: Can't use annotation for shipment count due to model relationship
+        # Will compute in display method instead
         return qs
     
     def get_user_roles(self, obj):
@@ -211,20 +208,23 @@ class CustomUserAdmin(UserAdmin):
     def get_shipments_count(self, obj):
         """Display shipments count for drivers."""
         if hasattr(obj, "driver_profile"):
-            count = getattr(obj, 'driver_shipments_count', 0)
-            if count > 0:
-                return format_html(
-                    '<span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; '
-                    'padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">'
-                    '📦 {} shipment{}</span>',
-                    count,
-                    's' if count != 1 else ''
-                )
-            return format_html('<span style="color: #94a3b8; font-size: 11px;">No shipments</span>')
+            try:
+                from shipments.models import Shipment
+                count = Shipment.objects.filter(driver=obj.driver_profile).count()
+                if count > 0:
+                    return format_html(
+                        '<span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; '
+                        'padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">'
+                        '📦 {} shipment{}</span>',
+                        count,
+                        's' if count != 1 else ''
+                    )
+                return format_html('<span style="color: #94a3b8; font-size: 11px;">No shipments</span>')
+            except Exception:
+                return format_html('<span style="color: #94a3b8; font-size: 11px;">—</span>')
         return format_html('<span style="color: #94a3b8; font-size: 11px;">—</span>')
     
     get_shipments_count.short_description = "📦 Shipments"
-    get_shipments_count.admin_order_field = "driver_shipments_count"
     
     def get_quick_actions(self, obj):
         """Quick action buttons for each user."""

@@ -78,10 +78,10 @@ class DriverAdmin(admin.ModelAdmin):
         """Optimize with shipment counting."""
         qs = super().get_queryset(request)
         qs = qs.select_related('user').annotate(
-            total_shipments=Count('shipment'),
+            total_shipments=Count('shipments'),
             active_shipments=Count(
-                'shipment',
-                filter=Q(shipment__current_status__in=['ASSIGNED', 'IN_TRANSIT'])
+                'shipments',
+                filter=Q(shipments__current_status__in=['ASSIGNED', 'IN_TRANSIT'])
             )
         )
         return qs
@@ -343,8 +343,8 @@ class ProductAdmin(admin.ModelAdmin):
     def get_price_display(self, obj):
         """Formatted price display."""
         return format_html(
-            '<span style="color: #10b981; font-weight: 600;">💰 {:.2f} SAR</span>',
-            obj.price
+            '<span style="color: #10b981; font-weight: 600;">💰 {} SAR</span>',
+            f"{obj.price:.2f}"
         )
     
     get_price_display.short_description = "Price"
@@ -468,7 +468,7 @@ class WarehouseAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Add shipment counting."""
         qs = super().get_queryset(request)
-        qs = qs.annotate(shipment_count=Count('shipment'))
+        qs = qs.annotate(shipment_count=Count('shipments'))
         return qs
     
     def get_warehouse_name(self, obj):
@@ -542,7 +542,7 @@ class CustomerAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Add shipment counting."""
         qs = super().get_queryset(request)
-        qs = qs.annotate(shipment_count=Count('shipment'))
+        qs = qs.annotate(shipment_count=Count('shipments'))
         return qs
     
     def get_customer_name(self, obj):
