@@ -191,6 +191,7 @@ class LoginView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+
 @extend_schema(
     tags=["Auth"],
     responses={

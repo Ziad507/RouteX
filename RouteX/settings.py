@@ -65,6 +65,7 @@ JAZZMIN_SETTINGS = {
     "site_header": "RouteX Control Center",
     "site_brand": "RouteX",
     "welcome_sign": "Welcome to RouteX Operations Portal",
+    "custom_css": "users/css/admin.css",
     "site_logo_classes": "img-circle",
     "topmenu_links": [
         {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},

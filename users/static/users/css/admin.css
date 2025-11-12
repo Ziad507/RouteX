@@ -1,0 +1,100 @@
+/* Custom styling for Jazzmin-themed admin */
+
+body.jazzmin-admin {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0ea5e9 100%);
+    font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.brand-link {
+    background: rgba(15, 23, 42, 0.75);
+}
+
+.brand-link .brand-text {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.main-header.navbar {
+    background: rgba(15, 23, 42, 0.9) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-sidebar .nav-link.active {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: #0f172a !important;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
+}
+
+.nav-sidebar .nav-link:hover {
+    background: rgba(14, 165, 233, 0.15);
+    color: #e0f2fe;
+}
+
+.content-wrapper {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+}
+
+.card,
+.info-box,
+.small-box {
+    border-radius: 18px;
+    border: none;
+    background: rgba(15, 23, 42, 0.85);
+    box-shadow: 0 20px 40px rgba(8, 47, 73, 0.35);
+    color: #e2e8f0;
+}
+
+.card .card-header {
+    border-bottom: none;
+    background: transparent;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    border-color: transparent;
+    box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+}
+
+.table thead th {
+    background: rgba(14, 116, 144, 0.25);
+    border: none;
+    color: #bae6fd;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.table tbody td {
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.login-page,
+.register-page {
+    background: linear-gradient(160deg, #020617 0%, #0f172a 35%, #0ea5e9 100%);
+}
+
+.login-box .card {
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 55px rgba(8, 47, 73, 0.55);
+}
+
+.login-box .card-body {
+    background: rgba(15, 23, 42, 0.9);
+    color: #e2e8f0;
+}
+
+.login-logo a {
+    color: #38bdf8 !important;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
