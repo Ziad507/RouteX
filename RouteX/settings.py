@@ -435,6 +435,9 @@ SPECTACULAR_SETTINGS = {
     },
     "AUTHENTICATION_WHITELIST": [],
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    # Serve Swagger UI from CDN (works better on PythonAnywhere)
+    "SWAGGER_UI_FAVICON_HREF": "https://fastapi.tiangolo.com/img/favicon.png",
+    "SWAGGER_UI_DIST": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@latest",
 }
 
 
