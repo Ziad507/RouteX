@@ -14,12 +14,16 @@ class DriverInline(admin.StackedInline):
     """
     model = Driver
     can_delete = True
-    verbose_name = "Driver Profile"
-    verbose_name_plural = "Driver Profile"
+    verbose_name = "🚗 Driver Profile"
+    verbose_name_plural = "🚗 Driver Profile"
     fk_name = "user"
     fields = ("is_active",)
     extra = 0
     max_num = 1
+    
+    def get_extra(self, request, obj=None, **kwargs):
+        """Don't show extra empty forms."""
+        return 0
 
 
 class WarehouseManagerInline(admin.StackedInline):
@@ -29,12 +33,16 @@ class WarehouseManagerInline(admin.StackedInline):
     """
     model = WarehouseManager
     can_delete = True
-    verbose_name = "Warehouse Manager Profile"
-    verbose_name_plural = "Warehouse Manager Profile"
+    verbose_name = "📦 Warehouse Manager Profile"
+    verbose_name_plural = "📦 Warehouse Manager Profile"
     fk_name = "user"
     fields = ()  # No additional fields, just the relationship
     extra = 0
     max_num = 1
+    
+    def get_extra(self, request, obj=None, **kwargs):
+        """Don't show extra empty forms."""
+        return 0
 
 
 @admin.register(CustomUser)
@@ -46,15 +54,32 @@ class CustomUserAdmin(UserAdmin):
     # Inline forms for role management
     inlines = [DriverInline, WarehouseManagerInline]
     
-    # Field organization
-    fieldsets = UserAdmin.fieldsets + (
+    # Field organization for editing existing users
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "email")}),
         ("Contact Information", {"fields": ("phone",)}),
+        ("Permissions", {
+            "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
+        }),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
     
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {"fields": ("username", "password1", "password2")}),
-        ("Contact Information", {"fields": ("phone",)}),
-        ("Permissions", {"fields": ("is_staff", "is_active")}),
+    # Field organization for creating new users (clean, no duplication)
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": ("username", "password1", "password2"),
+            "description": "Enter the username and password for the new user. The password must meet security requirements.",
+        }),
+        ("Contact Information", {
+            "fields": ("phone",),
+            "description": "Enter the user's phone number. Must be unique and in Saudi format (+966XXXXXXXXX).",
+        }),
+        ("Permissions", {
+            "fields": ("is_staff", "is_active"),
+            "description": "Set user permissions. Staff users can access the admin panel. Active users can log in.",
+        }),
     )
     
     # List display with role indicators
@@ -195,7 +220,19 @@ class CustomUserAdmin(UserAdmin):
     
     def get_inline_instances(self, request, obj=None):
         """
-        Show inline forms for both creating and editing users.
-        This allows assigning roles immediately when creating a new user.
+        Only show inline forms when editing existing users.
+        This prevents errors when creating new users (user must exist first).
         """
+        if not obj:
+            return []
         return super().get_inline_instances(request, obj)
+    
+    def save_model(self, request, obj, form, change):
+        """
+        Save the user model and handle role assignment after user creation.
+        """
+        super().save_model(request, obj, form, change)
+        
+        # After saving, if this is a new user and no role was assigned via inline,
+        # we can optionally assign a default role here if needed
+        # For now, roles are assigned via inline forms or bulk actions
